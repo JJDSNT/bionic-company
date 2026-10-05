@@ -266,6 +266,7 @@ No framework or protocol defines the project. Technology choices should follow t
 | [docs/organizational-model.md](docs/organizational-model.md) | The working theory: boundaries, principles, open questions |
 | [docs/m0-model.md](docs/m0-model.md) | M0 — Observe: entities, the contract, the twin, cross-domain validation |
 | [docs/m1-model.md](docs/m1-model.md) | M1 — Direct: intents, resolution, handoff, fulfilment |
+| [docs/backlog.md](docs/backlog.md) | Everything pending: waiting on the author, next foundations, open questions |
 | [docs/cases/](docs/cases/) | Learning cases: real situations the model does not yet handle well |
 | [contract/](contract/) | The organizational contract as language-neutral JSON Schema |
 
