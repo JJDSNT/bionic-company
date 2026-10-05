@@ -58,19 +58,28 @@ class Participation:
 
 
 @dataclass
-class WorkUnit:
-    unit: str
+class Stretch:
+    """An observed period of one domain working on a product."""
+
     domain: str
-    capabilities: list[str]
     first_signal_at: str
     last_signal_at: str
-    signal_count: int
+    signal_count: int = 0
+
+
+@dataclass
+class ProductView:
+    product: str
+    name: str
+    custodian: str
+    stretches: list[Stretch]
+    releases: list[Signal]
 
 
 @dataclass
 class InitiativeView:
     initiative: str
-    work_units: list[WorkUnit]
+    products: list[ProductView]
     participations: list[Participation]
     decisions: list[Signal]
     open_gates: list[Signal]
@@ -80,7 +89,7 @@ class InitiativeView:
 
 
 def signals_of(org: Organization, signals: Iterable[Signal], initiative: str) -> list[Signal]:
-    """The signals whose work unit is bound to this initiative."""
+    """The signals about products of this initiative."""
 
     return sorted((s for s in signals if org.initiative_for(s.domain_id, s.work_unit_ref) == initiative),
                   key=lambda s: s.occurred_at)
@@ -93,16 +102,20 @@ def initiative_view(org: Organization, signals: Iterable[Signal], initiative: st
     total: dict[str, float] = defaultdict(float)
     gates: dict[str, Signal] = {}
     unpriced = {"count": 0, "seconds": 0.0}
-    units: dict[str, WorkUnit] = {}
+    products: dict[str, ProductView] = {
+        p.id: ProductView(p.id, p.name, p.custodian.domain if p.custodian else "", [], [])
+        for p in org.products.values() if p.initiative == initiative
+    }
     for s in mine:
-        name = f"{s.domain_id}/{s.work_unit_ref}"
-        unit = units.get(name)
-        if unit is None:
-            unit = units[name] = WorkUnit(name, s.domain_id, [], s.occurred_at, s.occurred_at, 0)
-        unit.last_signal_at = s.occurred_at
-        unit.signal_count += 1
-        if s.capability not in unit.capabilities:
-            unit.capabilities.append(s.capability)
+        view = products[org.product_for(s.domain_id, s.work_unit_ref).id]
+        last = view.stretches[-1] if view.stretches else None
+        if last is None or last.domain != s.domain_id:
+            last = Stretch(s.domain_id, s.occurred_at, s.occurred_at)
+            view.stretches.append(last)
+        last.last_signal_at = s.occurred_at
+        last.signal_count += 1
+        if s.type == "outcome.delivered":
+            view.releases.append(s)
         key = (s.domain_id, s.capability)
         p = by_pair.get(key)
         if p is None:
@@ -124,7 +137,7 @@ def initiative_view(org: Organization, signals: Iterable[Signal], initiative: st
 
     return InitiativeView(
         initiative=initiative,
-        work_units=sorted(units.values(), key=lambda u: u.first_signal_at),
+        products=sorted(products.values(), key=lambda v: v.stretches[0].first_signal_at if v.stretches else "~"),
         participations=sorted(by_pair.values(), key=lambda p: p.first_signal_at),
         decisions=[s for s in mine if s.type in ("decision.recorded", "gate.decided")],
         open_gates=sorted(gates.values(), key=lambda s: s.occurred_at),
@@ -135,7 +148,7 @@ def initiative_view(org: Organization, signals: Iterable[Signal], initiative: st
 
 
 def unbound(org: Organization, signals: Iterable[Signal]) -> dict[tuple[str, str], int]:
-    """Work units that report signals but serve no initiative: the twin sees them, nobody claimed them."""
+    """Domain work that reports signals but is no product of the organization: seen, not claimed."""
 
     counts: dict[tuple[str, str], int] = defaultdict(int)
     for s in signals:

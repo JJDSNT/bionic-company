@@ -85,30 +85,51 @@ Something the organization is pursuing. It has no owning domain.
 | `intent` | What it is for, in the organization's words |
 | `status` | `active` · `paused` · `done` · `abandoned` |
 
-### Work unit binding
+### Product
 
-The link between an initiative and a domain's own unit of work (a book directory, a film production, a campaign).
+What the organization makes and releases: a book, a film. A campaign or a service could be one too.
 
 | Field | Notes |
 |---|---|
-| `initiative_id` | |
-| `domain_id` | |
-| `work_unit_ref` | The domain's own identifier, e.g. a KDP `book.yaml` identity or a Cine `project.yaml` id |
-| `since` / `until` | |
+| `id` | The organization's identifier, e.g. `singular-book`, `singular-film` |
+| `name` | |
+| `initiative` | The initiative it serves |
+| `kind` | e.g. `book`, `film` |
+| `after_release` | `frozen`: a released version never changes (fiction). `editions`: a later edition may revise it (a technical book) |
+| `custody` | Which domain works on it, under the domain's own reference, and when |
 
-**Domains do not need to know initiatives exist.** Bionic Company keeps the binding. KDP Studio keeps producing a book; Bionic Company knows the book currently serves *A Era dos Agentes*. This keeps initiatives out of domain models and lets the binding change without touching the domain.
+**A product's identity belongs to the organization, not to a domain.** When the Singular book moves from work done by hand into KDP Studio, custody changes and the product stays the same, with one continuous history.
+
+**A product evolves in versions, and a release freezes a version.** The release is the moment a domain's work becomes an organizational asset. In the contract it is `outcome.delivered`, carrying the version. Whether anything may change after a release is a policy of the product (`after_release`), not a rule of the domain.
+
+**Domains do not need to know initiatives or products exist.** KDP Studio keeps producing a book under its own id. Bionic Company knows that id is, for now, the custody of `a-era-dos-agentes-book`.
+
+A component is not a product. Singular's screenplay is part of the film, not something the organization releases on its own.
+
+### Custody
+
+| Field | Notes |
+|---|---|
+| `domain` | |
+| `ref` | The domain's own identifier for the work: a KDP `book.yaml` id, a Cine `project.yaml` id |
+| `since` / `until` | A product has at most one current custodian |
+
+A signal's `work_unit_ref` is the domain's own reference. The twin maps it to a product through custody.
 
 ### Flow
 
-One work unit feeding another within an initiative, for example a book adapted into a screenplay.
+One product feeding another, for example a book adapted into a film.
 
 | Field | Notes |
 |---|---|
-| `initiative` | |
-| `source` / `target` | Work units, written `<domain>/<work_unit_ref>`; both must be bound to the initiative |
-| `relation` | Free text: `adapted into`, `produced as`, `promoted by` |
+| `source` / `target` | Products |
+| `relation` | Free text: `adapted into`, `enriched by`, `promoted by` |
 
-Domains do not know each other, so no domain can report a flow. **The organization records it.**
+Domains do not know each other, so no domain can report a flow. **The organization records it.** Flows join products, never custodies, so a change of custody breaks no flow.
+
+### Intellectual property (named, not modelled)
+
+Singular's book and film are two products on the same intellectual content: the story and its world. That content outlives any initiative and may give rise to more products later. It is not an entity yet. For now the initiative groups the products. It becomes one when a question needs it, such as rights, reputation across products, or a new product years later.
 
 ### Participation (derived)
 
@@ -120,7 +141,7 @@ A period during which a domain participated in an initiative through a capabilit
 | `first_signal_at` / `last_signal_at` | |
 | `signal_count`, `cost` | Aggregates |
 
-Participation is **derived from signals and bindings**, never declared by hand. It is the "temporary relationship" in the organizational model.
+Participation is **derived from signals and custody**, never declared by hand. It is the "temporary relationship" in the organizational model.
 
 ### Actor
 
@@ -188,7 +209,7 @@ Rules:
 
 - **`id` is globally unique and stable.** Re-ingesting the same signal is a no-op. Adapters can therefore re-read a source safely.
 - **`type` comes from a small organizational vocabulary**, listed below. Domain-specific detail goes in `data`, which the twin stores but does not interpret.
-- **`work_unit_ref`, not `initiative_id`.** The twin resolves the initiative through the binding.
+- **`work_unit_ref`, not a product or initiative id.** It is the domain's own reference. The twin resolves the product, and through it the initiative, by custody.
 - **`cost`**, when present, is `{ "amount": 1.84, "currency": "USD", "kind": "compute" }`.
 - **`source`** points back to the domain's own record, so any organizational fact can be traced to its origin.
 
@@ -196,7 +217,7 @@ Initial signal vocabulary:
 
 | Type | Meaning |
 |---|---|
-| `work.started` | A work unit began, or began serving a capability |
+| `work.started` | A domain began work on something, or began serving a capability |
 | `decision.recorded` | A domain decision with actor and reason |
 | `gate.opened` / `gate.decided` | A human or policy gate opened or decided |
 | `version.recorded` | A new version of a deliverable exists |
@@ -239,7 +260,7 @@ Domain records ──adapter──▶ Signals ──▶ Twin signal log (append-
 
 - The twin keeps its own copy of every signal. It never depends on a domain retaining history.
 - Projections are disposable and rebuilt from the log. This applies the "records as truth" pattern to Bionic Company itself.
-- Bindings, initiatives, capabilities and provisions are organizational records that Bionic Company authors. They are versioned, but they are not signals.
+- Products and their custody, flows, initiatives, capabilities and provisions are organizational records that Bionic Company authors. They are versioned, but they are not signals.
 
 ## First implementations
 
@@ -347,37 +368,41 @@ And: rebuilding all projections from the log gives the same answers.
 
 ## Cross-domain validation: Singular
 
-Before M1, the model was checked against the one initiative that already crosses domains. *Singular* is a book written by hand in 2025, not yet in KDP Studio. It was adapted into a screenplay in September 2026 and is being produced as a film in Cine Toaster.
+Before M1, the model was checked against the one initiative that already crosses domains. *Singular* is a book written by hand in 2025, not yet released and not yet in KDP Studio. It was adapted into a film whose screenplay was written in September 2026, and the film moved into Cine Toaster in October 2026.
 
 ```text
-2025-07-16 → 2026-09-16  manual/singular-book          editorial-production
-2026-09-15               manual/singular-screenplay    audiovisual-production
-2026-09-17 → 2026-10-04  cine-toaster/singular         audiovisual-production
+singular-book   Singular (book)   not released   now with: manual
+    2025-07-16 → 2026-09-16  manual            4 signals
+singular-film   Singular (film)   not released   now with: cine-toaster
+    2026-09-15 → 2026-09-15  manual            1 signal   (the screenplay)
+    2026-09-17 → 2026-10-04  cine-toaster    172 signals
 
-manual/singular-book —adapted into→ manual/singular-screenplay —produced as→ cine-toaster/singular
+singular-book —adapted into→ singular-film
 ```
 
 What held:
 
-- **One initiative, several work units, several providers.** Bindings already allowed this. The signal contract did not change.
+- **One initiative, several products, several providers.** The signal contract did not change.
 - **Initiatives do not belong to domains.** Singular's identity is untouched by which domain is working on it.
 
 What had to be added:
 
 - **External domains.** Work happens outside the autonomous domains: by hand, before a domain existed, or by a vendor. Without a place for it, the twin would show Singular starting in September 2026 instead of July 2025.
 - **Manual signals.** A human-written file of signals, each citing its evidence. It is another adapter, not a special case.
-- **Flows as organizational records.** "The film adapts the book" is the most important fact about Singular's path, and no domain can report it.
+- **Products with custody.** A first version modelled work units as `<domain>/<ref>`, so a product's identity depended on who worked on it, and moving the book into KDP Studio would have made it a different thing. Products now have the organization's identity, and custody moves. This is the same principle as initiatives, one level down.
+- **Flows between products.** "The film adapts the book" is the most important fact about Singular's path, and no domain can report it.
 
 What it showed:
 
+- **Product, component, version, release.** The book and the film are products. The screenplay is a component of the film. Products evolve in versions, and a release freezes a version, at least for fiction.
 - **Provision is not participation.** KDP Studio is the declared provider of editorial production. Singular's editorial work was done elsewhere. The twin keeps both facts: who is *expected* to provide a capability, and who *actually* did. This distinction is the input M1's capability resolution needs.
 - **Timing is not causation.** Book v2 is dated the day after the screenplay. The twin shows the timing; whether the film fed back into the book is a flow only the organization can declare. Flows are declared, never inferred, for now.
-- **Provider change is a binding change.** When the book moves into KDP Studio, `manual/singular-book` gets an `until` and a `kdp-studio` binding starts. The initiative, its history and its flows stay as they are.
-- **The next need is a gap.** Singular's next step, a launch, requires `market-relationships`, which has no provider. That is M1's first case: the organization expresses a need nobody can serve yet.
+- **A domain may report work from before its custody.** Cine Toaster's migration recorded SINGULAR's earlier versions as imported history, so its signals start before the custody date. The twin keeps when work happened and who reports it as separate facts.
+- **The next needs are already known.** The book is to be enriched with what the film taught, before its release. The launch requires `market-relationships`, which has no provider. These are M1's two cases.
 
 ## Running it
 
-The `bionic/` package implements the contract, the twin log and the KDP Studio adapter. The legacy AgentOS prototype is untouched.
+The `bionic/` package implements the contract, the organizational records, the twin log and the adapters (KDP Studio, Cine Toaster, manual signals). The legacy AgentOS prototype is untouched.
 
 ```bash
 uv sync
@@ -397,3 +422,4 @@ uv run pytest
 4. **Whether `outcome.delivered` needs a human confirmation** or can be inferred, for example from `kdp check` passing.
 5. ~~How Singular's pre-Cine-Toaster history is represented.~~ Resolved: Cine Toaster's migration recorded it as imported versions, and the book and screenplay before it are manual signals.
 6. **Whether flows can ever be inferred**, for example from a production keeping its source book in `story/book`, or must always be declared.
+7. **When intellectual property becomes an entity** rather than a name the initiative carries.

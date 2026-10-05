@@ -49,7 +49,8 @@ def make_org(root: Path, book: Path) -> organization.Organization:
                          {"id": "market-relationships", "name": "Market"}],
         "provisions": [{"capability": "editorial-production", "domain": "kdp-studio"}],
         "initiatives": [{"id": "the-book", "name": "The Book"}],
-        "bindings": [{"initiative": "the-book", "domain": "kdp-studio", "work_unit_ref": "test-book"}],
+        "products": [{"id": "book", "name": "The Book", "initiative": "the-book",
+                      "custody": [{"domain": "kdp-studio", "ref": "test-book"}]}],
         "sources": [{"domain": "kdp-studio", "path": str(book)}],
     }), "utf-8")
     return organization.load(root)
@@ -195,7 +196,8 @@ def test_cine_open_gates_and_cost_reach_the_initiative(tmp_path):
     production = make_production(tmp_path / "film")
     org = replace(make_org(tmp_path / "org", tmp_path / "book"),
                   domains={"cine-toaster": organization.Domain("cine-toaster", "Cine Toaster")},
-                  bindings=[organization.Binding("the-book", "cine-toaster", "film")])
+                  products={"film": organization.Product("film", "Film", "the-book",
+                                                         custody=({"domain": "cine-toaster", "ref": "film"},))})
     signals = list(cine_toaster.signals(production))
 
     view = twin.initiative_view(org, signals, "the-book")
@@ -205,46 +207,59 @@ def test_cine_open_gates_and_cost_reach_the_initiative(tmp_path):
 
 
 
-def test_an_initiative_crosses_domains_through_declared_flows(tmp_path):
+def test_custody_moves_and_the_product_stays_the_same(tmp_path):
     from bionic.adapters import manual
 
     org_root = tmp_path / "org"
     (org_root / "manual").mkdir(parents=True)
     (org_root / "manual" / "work.yaml").write_text(yaml.safe_dump({
         "work_unit_ref": "the-novel", "capability": "editorial-production",
-        "signals": [
-            {"id": "v1", "type": "version.recorded", "occurred_at": "2025-07-17T20:00:00Z",
-             "actor": {"id": "author", "kind": "human"}, "summary": "Novel v1", "evidence": "novel.pdf"},
-            {"id": "script", "type": "version.recorded", "occurred_at": "2026-09-15T20:00:00Z",
-             "work_unit_ref": "the-script", "capability": "audiovisual-production",
-             "actor": {"id": "author", "kind": "human"}, "summary": "Screenplay"},
-        ]}), "utf-8")
+        "signals": [{"id": "v1", "type": "version.recorded", "occurred_at": "2025-07-17T20:00:00Z",
+                     "actor": {"id": "author", "kind": "human"}, "summary": "Novel v1", "evidence": "novel.pdf"}],
+    }), "utf-8")
     (org_root / "organization.yaml").write_text(yaml.safe_dump({
         "organization": {"id": "test", "name": "Test"},
-        "domains": [{"id": "manual", "name": "By hand", "kind": "external"}],
-        "capabilities": [{"id": "editorial-production", "name": "E"}, {"id": "audiovisual-production", "name": "A"}],
+        "domains": [{"id": "manual", "name": "By hand", "kind": "external"},
+                    {"id": "kdp-studio", "name": "KDP Studio"}],
         "initiatives": [{"id": "story", "name": "Story"}],
-        "bindings": [{"initiative": "story", "domain": "manual", "work_unit_ref": "the-novel"},
-                     {"initiative": "story", "domain": "manual", "work_unit_ref": "the-script"}],
-        "flows": [{"initiative": "story", "source": "manual/the-novel", "target": "manual/the-script",
-                   "relation": "adapted into"}],
+        "products": [
+            {"id": "novel", "name": "Novel", "initiative": "story", "custody": [
+                {"domain": "manual", "ref": "the-novel", "until": "2026-01-01"},
+                {"domain": "kdp-studio", "ref": "novel-in-kdp", "since": "2026-01-01"}]},
+            {"id": "film", "name": "Film", "initiative": "story"},
+        ],
+        "flows": [{"source": "novel", "target": "film", "relation": "adapted into"}],
         "sources": [{"domain": "manual", "path": "manual/work.yaml"}],
     }), "utf-8")
     org = organization.load(org_root)
-    signals = list(manual.signals(org.sources[0].path))
+    later = Signal(id="k:1", type="version.recorded", occurred_at="2026-02-01T00:00:00Z", domain_id="kdp-studio",
+                   work_unit_ref="novel-in-kdp", actor=Actor("kdp-studio:author", "human"),
+                   capability="editorial-production", summary="Novel v2")
+    signals = [*manual.signals(org.sources[0].path), later]
 
     view = twin.initiative_view(org, signals, "story")
-    assert [u.unit for u in view.work_units] == ["manual/the-novel", "manual/the-script"]
+    novel, film = view.products
+    assert novel.product == "novel" and novel.custodian == "kdp-studio"
+    assert [t.domain for t in novel.stretches] == ["manual", "kdp-studio"]
+    assert film.stretches == [] and novel.releases == []
     assert signals[0].data["evidence"] == "novel.pdf"
-    assert org.domains["manual"].kind == "external"
 
 
-def test_a_flow_must_join_bound_work_units(tmp_path):
+def test_products_must_be_consistent(tmp_path):
     book = make_book(tmp_path / "book", HISTORY, git=False)
     org = make_org(tmp_path / "org", book)
-    raw = yaml.safe_load((org.root / "organization.yaml").read_text("utf-8"))
-    raw["flows"] = [{"initiative": "the-book", "source": "kdp-studio/test-book", "target": "nowhere/x",
-                     "relation": "feeds"}]
-    (org.root / "organization.yaml").write_text(yaml.safe_dump(raw), "utf-8")
-    with pytest.raises(ContractError, match="no binding declares"):
-        organization.load(org.root)
+    path = org.root / "organization.yaml"
+    good = yaml.safe_load(path.read_text("utf-8"))
+
+    for change, message in [
+        ({"flows": [{"source": "book", "target": "nowhere", "relation": "feeds"}]}, "unknown product"),
+        ({"products": good["products"] + [{"id": "copy", "name": "C", "initiative": "the-book",
+                                            "custody": [{"domain": "kdp-studio", "ref": "test-book"}]}]},
+         "is claimed by"),
+        ({"products": [{**good["products"][0], "custody": [{"domain": "kdp-studio", "ref": "a"},
+                                                           {"domain": "kdp-studio", "ref": "b"}]}]},
+         "more than one current custodian"),
+    ]:
+        path.write_text(yaml.safe_dump({**good, **change}), "utf-8")
+        with pytest.raises(ContractError, match=message):
+            organization.load(org.root)

@@ -61,11 +61,14 @@ def initiative(org: organization.Organization, args: argparse.Namespace) -> int:
         print(f"  {item.intent}")
     print(f"\n{view.signal_count} signals")
 
-    print("\nPath (work units in order of first signal)")
-    for u in view.work_units:
-        print(f"  {u.first_signal_at[:10]} → {u.last_signal_at[:10]}  {u.unit:34} {', '.join(u.capabilities)}"
-              f"  ({u.signal_count} signals)")
-    flows = [f for f in org.flows if f.initiative == item.id]
+    print("\nProducts")
+    for v in view.products:
+        released = ", ".join(r.data.get("version", "?") for r in v.releases) or "not released"
+        print(f"  {v.product:24} {v.name:28} {released:14} now with: {v.custodian or 'nobody'}")
+        for t in v.stretches:
+            print(f"      {t.first_signal_at[:10]} → {t.last_signal_at[:10]}  {t.domain:14} {t.signal_count:4} signals")
+    flows = [f for f in org.flows if f.source in org.products and org.products[f.source].initiative == item.id
+             or f.target in org.products and org.products[f.target].initiative == item.id]
     if flows:
         print("\nFlows")
         for f in flows:
@@ -112,7 +115,7 @@ def overview(org: organization.Organization, args: argparse.Namespace) -> int:
         print(f"\nWork observed outside autonomous domains: {', '.join(external)}")
     loose = twin.unbound(org, signals)
     if loose:
-        print("\nWork units reporting signals but bound to no initiative")
+        print("\nDomain work reporting signals but claimed by no product")
         for (domain, ref), count in sorted(loose.items()):
             print(f"  {domain:14} {ref:24} {count:4} signals")
     return 0

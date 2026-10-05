@@ -1,7 +1,7 @@
 """Organizational records: what Bionic Company itself authors.
 
-Domains, capabilities, provisions, initiatives and the bindings between
-initiatives and domain work units live in one human-readable file,
+Domains, capabilities, provisions, initiatives, products and their custody
+live in one human-readable file,
 ``organization.yaml``, in the organization directory. They are records, not
 signals: the organization declares them; domains never do.
 """
@@ -61,26 +61,58 @@ class Initiative:
     status: str = "active"
 
 
-@dataclass(frozen=True)
-class Binding:
-    """An initiative served, for a period, by one of a domain's work units."""
+AFTER_RELEASE = {"frozen", "editions"}
 
-    initiative: str
+
+@dataclass(frozen=True)
+class Custody:
+    """A period during which a domain works on a product, under its own reference for it."""
+
     domain: str
-    work_unit_ref: str
+    ref: str
     since: str = ""
     until: str = ""
 
 
 @dataclass(frozen=True)
-class Flow:
-    """One work unit feeding another within an initiative: a book a film adapts.
+class Product:
+    """What the organization makes and releases: a book, a film.
 
-    Domains do not know each other, so no domain can report this; the
-    organization records it. Work units are written ``<domain>/<work_unit_ref>``.
+    Its identity is the organization's, not a domain's: custody moves between
+    domains (a book written by hand, then in KDP Studio) and the product stays
+    the same. It evolves in versions; a release freezes a version. ``frozen``:
+    nothing released changes (fiction). ``editions``: a later edition may revise
+    it (a technical book).
     """
 
+    id: str
+    name: str
     initiative: str
+    kind: str = ""
+    after_release: str = "frozen"
+    custody: tuple[Custody, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.after_release not in AFTER_RELEASE:
+            raise ContractError(f"Unknown after_release {self.after_release!r}; allowed: {sorted(AFTER_RELEASE)}")
+        object.__setattr__(self, "custody", tuple(c if isinstance(c, Custody) else Custody(**c)
+                                                  for c in self.custody))
+
+    @property
+    def custodian(self) -> Custody | None:
+        """Who works on it now."""
+
+        return next((c for c in self.custody if not c.until), None)
+
+
+@dataclass(frozen=True)
+class Flow:
+    """One product feeding another: a film adapting a book, a film enriching it.
+
+    Domains do not know each other, so no domain can report this; the
+    organization records it.
+    """
+
     source: str
     target: str
     relation: str
@@ -104,7 +136,7 @@ class Organization:
     capabilities: dict[str, Capability] = field(default_factory=dict)
     provisions: list[Provision] = field(default_factory=list)
     initiatives: dict[str, Initiative] = field(default_factory=dict)
-    bindings: list[Binding] = field(default_factory=list)
+    products: dict[str, Product] = field(default_factory=dict)
     flows: list[Flow] = field(default_factory=list)
     sources: list[Source] = field(default_factory=list)
 
@@ -112,13 +144,17 @@ class Organization:
     def twin_dir(self) -> Path:
         return self.root / "twin"
 
-    def initiative_for(self, domain: str, work_unit_ref: str) -> str | None:
-        """The initiative a domain's work unit currently serves, if any."""
+    def product_for(self, domain: str, ref: str) -> Product | None:
+        """The product a domain's own reference stands for, in any period of custody."""
 
-        for binding in self.bindings:
-            if binding.domain == domain and binding.work_unit_ref == work_unit_ref and not binding.until:
-                return binding.initiative
+        for product in self.products.values():
+            if any(c.domain == domain and c.ref == ref for c in product.custody):
+                return product
         return None
+
+    def initiative_for(self, domain: str, ref: str) -> str | None:
+        product = self.product_for(domain, ref)
+        return product.initiative if product else None
 
     def providers(self, capability: str) -> list[str]:
         return [p.domain for p in self.provisions if p.capability == capability and not p.until]
@@ -153,7 +189,7 @@ def load(root: Path) -> Organization:
         capabilities=_by_id(raw.get("capabilities"), Capability, "capability"),
         provisions=[Provision(**p) for p in raw.get("provisions") or []],
         initiatives=_by_id(raw.get("initiatives"), Initiative, "initiative"),
-        bindings=[Binding(**b) for b in raw.get("bindings") or []],
+        products=_by_id(raw.get("products"), Product, "product"),
         flows=[Flow(**f) for f in raw.get("flows") or []],
         sources=[Source(domain=s["domain"], path=root / Path(s["path"]).expanduser())
                  for s in raw.get("sources") or []],
@@ -170,18 +206,22 @@ def _check_references(org: Organization) -> None:
             raise ContractError(f"Provision names unknown capability {p.capability!r}")
         if p.domain not in org.domains:
             raise ContractError(f"Provision names unknown domain {p.domain!r}")
-    for b in org.bindings:
-        if b.initiative not in org.initiatives:
-            raise ContractError(f"Binding names unknown initiative {b.initiative!r}")
-        if b.domain not in org.domains:
-            raise ContractError(f"Binding names unknown domain {b.domain!r}")
-    bound = {f"{b.domain}/{b.work_unit_ref}" for b in org.bindings}
+    claimed: dict[tuple[str, str], str] = {}
+    for product in org.products.values():
+        if product.initiative not in org.initiatives:
+            raise ContractError(f"Product {product.id!r} names unknown initiative {product.initiative!r}")
+        if sum(1 for c in product.custody if not c.until) > 1:
+            raise ContractError(f"Product {product.id!r} has more than one current custodian")
+        for c in product.custody:
+            if c.domain not in org.domains:
+                raise ContractError(f"Product {product.id!r} names unknown domain {c.domain!r}")
+            other = claimed.setdefault((c.domain, c.ref), product.id)
+            if other != product.id:
+                raise ContractError(f"{c.domain} reference {c.ref!r} is claimed by {other!r} and {product.id!r}")
     for f in org.flows:
-        if f.initiative not in org.initiatives:
-            raise ContractError(f"Flow names unknown initiative {f.initiative!r}")
-        for unit in (f.source, f.target):
-            if unit not in bound:
-                raise ContractError(f"Flow names work unit {unit!r}, which no binding declares")
+        for end in (f.source, f.target):
+            if end not in org.products:
+                raise ContractError(f"Flow names unknown product {end!r}")
     for s in org.sources:
         if s.domain not in org.domains:
             raise ContractError(f"Source names unknown domain {s.domain!r}")

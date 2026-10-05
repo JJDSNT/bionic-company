@@ -1,4 +1,4 @@
-# The Singular book and its screenplay, made by hand before any domain existed. Not yet in KDP Studio.
+# Singular's book and the film's screenplay, made by hand before any domain existed. Not yet in KDP Studio.
 # Dates are the files' own (modification times), so each entry cites its evidence.
 work_unit_ref: singular-book
 capability: editorial-production
@@ -25,9 +25,9 @@ signals:
     type: version.recorded
     occurred_at: 2026-09-15T23:50:44Z
     actor: {id: jaime, kind: human}
-    work_unit_ref: singular-screenplay
+    work_unit_ref: singular-film
     capability: audiovisual-production
-    summary: Screenplay adapted from the book, written outside Cine Toaster
+    summary: Screenplay adapted from the book, written before Cine Toaster
     evidence: ~/confyui/singular/livro/singular/roteiro.odt
   - id: book-v2
     type: version.recorded

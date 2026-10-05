@@ -35,19 +35,38 @@ initiatives:
     name: Singular
     intent: A creative work moving between audiovisual, editorial and market-facing activity.
 
-bindings:
-  - {initiative: a-era-dos-agentes, domain: kdp-studio, work_unit_ref: a-era-dos-agentes}
-  - {initiative: singular, domain: manual,       work_unit_ref: singular-book}
-  - {initiative: singular, domain: manual,       work_unit_ref: singular-screenplay}
-  - {initiative: singular, domain: cine-toaster, work_unit_ref: singular}
+# What the organization makes and releases. A product's identity is the organization's;
+# custody records which domain works on it, under that domain's own reference, and when.
+products:
+  - id: a-era-dos-agentes-book
+    name: A Era dos Agentes (book)
+    initiative: a-era-dos-agentes
+    kind: book
+    after_release: editions          # non-fiction: a later edition may revise it
+    custody:
+      - {domain: kdp-studio, ref: a-era-dos-agentes}
 
-# How work units feed one another. Domains do not know each other; the organization records it.
+  - id: singular-book
+    name: Singular (book)
+    initiative: singular
+    kind: book                       # fiction: a released version never changes
+    custody:
+      - {domain: manual, ref: singular-book, since: 2025-07-16}   # not yet in KDP Studio; not released
+
+  - id: singular-film
+    name: Singular (film)
+    initiative: singular
+    kind: film                       # the screenplay is part of the film
+    custody:
+      - {domain: manual,       ref: singular-film, until: 2026-10-03}
+      - {domain: cine-toaster, ref: singular,      since: 2026-10-03}   # toast migrate, CT-0054
+
+# How products feed one another. Domains do not know each other; the organization records it.
 flows:
-  - {initiative: singular, source: manual/singular-book,       target: manual/singular-screenplay, relation: adapted into}
-  - {initiative: singular, source: manual/singular-screenplay, target: cine-toaster/singular,       relation: produced as}
+  - {source: singular-book, target: singular-film, relation: adapted into}
 
 # Where adapters read each domain's work units. Local to this machine.
 sources:
   - {domain: kdp-studio, path: ~/books/a-era-dos-agentes}
   - {domain: cine-toaster, path: ~/films/singular}
-  - {domain: manual,       path: manual/singular-book.yaml}
+  - {domain: manual,       path: manual/singular.yaml}
