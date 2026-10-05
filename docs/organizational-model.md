@@ -427,3 +427,5 @@ Before expanding implementation, the repository should:
 6. Represent organizational adaptation and agent workforce without prematurely fixing agent roles.
 7. Start with observation/mapping of real organizational flows; introduce simulation incrementally.
 8. Let real cross-domain use cases drive subsequent abstractions.
+
+The first concrete step is specified in **[m0-model.md](m0-model.md)**: the minimal entities, the organizational contract and the read-only observation of KDP Studio and Cine Toaster.
