@@ -27,6 +27,9 @@ provisions:
   - {capability: audiovisual-production, domain: cine-toaster}
   - {capability: market-relationships,   domain: pulse}   # planned: a gap until Pulse is active
 
+# TODO (deferred): objectives, and which of them each initiative serves. More complex than it
+# looks; to be worked on later (docs/m1-model.md, open question 5).
+
 initiatives:
   - id: a-era-dos-agentes
     name: A Era dos Agentes

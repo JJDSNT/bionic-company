@@ -204,5 +204,5 @@ uv run bionic --org examples/organization intent choose launch-singular wait --b
 1. **Intent granularity.** Is "enrich the book" one intent, or several, such as structure, characters and new scenes? M1 suggests one per desired outcome, and leaves the breakdown to the domain.
 2. ~~Does the book stay one work unit after migration?~~ Resolved: it is one product, and the migration is a change of custody.
 3. ~~Who may state an intent?~~ Whoever the authority envelope grants; by default people only.
-5. **What objectives does this organization have?** None is declared yet. They are set by people, not inferred.
+5. **TODO (deferred by the author): which objectives do the initiatives serve?** This is more complex than a sentence per initiative and will be worked on later. Until then no objectives are declared, and the overview says so. They are set by people, never inferred.
 4. **Can an intent draw on a product from another initiative?** For example, *A Era dos Agentes* using material from Singular.
