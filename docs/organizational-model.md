@@ -428,4 +428,4 @@ Before expanding implementation, the repository should:
 7. Start with observation/mapping of real organizational flows; introduce simulation incrementally.
 8. Let real cross-domain use cases drive subsequent abstractions.
 
-The first concrete step is specified in **[m0-model.md](m0-model.md)**: the minimal entities, the organizational contract and the read-only observation of KDP Studio and Cine Toaster.
+The first concrete steps are specified in **[m0-model.md](m0-model.md)** (Observe: the minimal entities, the organizational contract and the read-only observation of the domains) and **[m1-model.md](m1-model.md)** (Direct: intents, resolution, handoff and fulfilment).
