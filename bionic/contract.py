@@ -12,6 +12,9 @@ from typing import Any
 
 CONTRACT_VERSION = "0.1"
 
+# The domain id under which Bionic Company reports its own decisions.
+ORGANIZATION_DOMAIN = "bionic"
+
 ACTOR_KINDS = {"human", "agent", "system"}
 
 SIGNAL_TYPES = {

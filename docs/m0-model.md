@@ -123,7 +123,7 @@ One product feeding another, for example a book adapted into a film.
 | Field | Notes |
 |---|---|
 | `source` / `target` | Products |
-| `relation` | Free text: `adapted into`, `enriched by`, `promoted by` |
+| `relation` | Free text, read from source to target: `adapted into`, `enriches`, `promotes` |
 
 Domains do not know each other, so no domain can report a flow. **The organization records it.** Flows join products, never custodies, so a change of custody breaks no flow.
 

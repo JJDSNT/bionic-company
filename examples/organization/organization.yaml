@@ -25,7 +25,7 @@ capabilities:
 provisions:
   - {capability: editorial-production,   domain: kdp-studio}
   - {capability: audiovisual-production, domain: cine-toaster}
-  # market-relationships has no provider until Pulse exists: a capability gap.
+  - {capability: market-relationships,   domain: pulse}   # planned: a gap until Pulse is active
 
 initiatives:
   - id: a-era-dos-agentes

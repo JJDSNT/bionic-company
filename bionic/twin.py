@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .contract import Signal
+from .contract import ORGANIZATION_DOMAIN, Signal
 from .organization import Organization
 
 LOG_FILENAME = "signals.jsonl"
@@ -91,7 +91,8 @@ class InitiativeView:
 def signals_of(org: Organization, signals: Iterable[Signal], initiative: str) -> list[Signal]:
     """The signals about products of this initiative."""
 
-    return sorted((s for s in signals if org.initiative_for(s.domain_id, s.work_unit_ref) == initiative),
+    return sorted((s for s in signals if org.initiative_for(s.domain_id, s.work_unit_ref) == initiative
+                   and s.domain_id != ORGANIZATION_DOMAIN),
                   key=lambda s: s.occurred_at)
 
 
@@ -152,7 +153,7 @@ def unbound(org: Organization, signals: Iterable[Signal]) -> dict[tuple[str, str
 
     counts: dict[tuple[str, str], int] = defaultdict(int)
     for s in signals:
-        if org.initiative_for(s.domain_id, s.work_unit_ref) is None:
+        if s.domain_id != ORGANIZATION_DOMAIN and org.initiative_for(s.domain_id, s.work_unit_ref) is None:
             counts[(s.domain_id, s.work_unit_ref)] += 1
     return dict(counts)
 

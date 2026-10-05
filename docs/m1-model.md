@@ -1,6 +1,6 @@
 # M1 — Direct
 
-> Status: proposal. Builds on [m0-model.md](m0-model.md).
+> Status: implemented up to resolution; handoff and fulfilment await the book's move into KDP Studio. Builds on [m0-model.md](m0-model.md).
 
 ## Purpose
 
@@ -28,7 +28,7 @@ Case A closes the loop the organizational model describes: creative learning fro
 ```text
 singular-book ──adapted into──▶ singular-film
       ▲                               │
-      └──── enriched by ──────────────┘
+      └──── enriches ─────────────────┘
             planned in M1, observed once fulfilled.
             The book's custody moves from manual work to KDP Studio; it stays the same product.
 ```
@@ -56,7 +56,7 @@ An intent is a need the organization states for an initiative. It says **what** 
 
 An intent never targets a released, `frozen` version. It targets the next version, or a new product.
 
-Intents are organizational records, kept beside `organization.yaml`. Every change of status is also a signal in the twin, with `domain_id: bionic`. The organization's own decisions are therefore part of the same history as the domains'.
+Every decision about an intent is a signal in the contract's envelope, reported by the `bionic` domain and appended to `decisions.jsonl` in the organization directory. That file is the organization's own record, versioned with it. The twin ingests it like any domain's. **Bionic Company reports its decisions through the same contract it asks of the domains**, so they share one history.
 
 ## Lifecycle
 
@@ -110,7 +110,7 @@ Domains still never need to know initiatives exist. KDP Studio receives a book a
 
 - The new custody maps KDP Studio's reference to `singular-book`, so its signals reach the product and the intent.
 - The intent is `fulfilled` when the enriched version is accepted, by a human in M1. It is not the book's release, which is a separate, later outcome.
-- Each `draws_on` entry becomes an observed flow. For Case A: `singular-film —enriched→ singular-book`.
+- Each `draws_on` entry becomes an observed flow. For Case A: `singular-film —enriches→ singular-book`.
 
 ## Gaps
 
@@ -140,6 +140,33 @@ Choosing among these is a human decision in M1. That choice is exactly what the 
 4. When Case A is fulfilled, the planned flow from the film appears as an observed flow into the book.
 5. Case B stays visible as an open gap with its options.
 6. Every organizational decision (stated, resolved, handed off, fulfilled) is in the twin's history, next to the domains' decisions.
+
+## Where it stands
+
+Both cases are stated and resolved in `examples/organization/decisions.jsonl`:
+
+```text
+Flows
+  singular-book —adapted into→ singular-film  [observed]
+  singular-film —enriches→ singular-book      [planned]   (intent enrich-singular-book)
+
+Intents
+  enrich-singular-book  [resolved]  editorial-production → singular-book
+      provider: kdp-studio — kdp-studio is the only active provider. Observed: this initiative's
+      editorial production so far was done by manual. Custody of singular-book moves from manual to kdp-studio.
+  launch-singular  [gap]  market-relationships
+      No active domain provides market intelligence & relationships.
+        wait · external · adapt (M2); planned provider: pulse
+```
+
+Next, outside Bionic Company: the book moves into KDP Studio. Then the organization records the new custody and the handoff, and progress appears from KDP Studio's own signals. For the launch, the choice among wait, external and adapt is open.
+
+```bash
+uv run bionic --org examples/organization intents
+uv run bionic --org examples/organization intent resolve launch-singular          # the proposal, not recorded
+uv run bionic --org examples/organization intent choose launch-singular wait --by <person>
+uv run bionic --org examples/organization intent handoff enrich-singular-book --by <person>
+```
 
 ## Open questions
 

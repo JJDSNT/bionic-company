@@ -157,7 +157,10 @@ class Organization:
         return product.initiative if product else None
 
     def providers(self, capability: str) -> list[str]:
-        return [p.domain for p in self.provisions if p.capability == capability and not p.until]
+        """Active domains that provide the capability now. A planned provider is not one yet."""
+
+        return [p.domain for p in self.provisions if p.capability == capability and not p.until
+                and self.domains[p.domain].status == "active"]
 
     def gaps(self) -> list[Capability]:
         """Capabilities the organization names but nobody currently provides."""
