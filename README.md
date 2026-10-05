@@ -1,196 +1,277 @@
 # Bionic Company
 
-**An experimental environment for representing, understanding and directing an agentic organization.**
+**An experimental architecture for building adaptive, agentic organizations.**
 
-Bionic Company is evolving from the original **AgentOS** experiment into an organizational layer that connects strategy with autonomous business domains.
+Bionic Company explores how an organization can combine human direction, autonomous AI agents, business capabilities, organizational digital twins and adaptive operating models into a system that can **understand itself, align strategy with execution, reorganize its workforce and learn from what happens**.
 
-The current working hypothesis is:
+The project started as **AgentOS**, an experiment in planning and executing digital-transformation actions with AI agents. That original direction is not discarded: it has evolved into a broader question.
 
-> **Bionic Company = Agentic BizOps + Organizational Twin + Organizational Adaptation.**
+> **What would it take to make a bionic organization computationally observable, steerable, adaptive and eventually simulatable?**
 
-It should know what the organization can do, what it wants to achieve, what is happening across its domains, and how well it is performing — **without needing to know how each domain performs its internal work**.
+The current working hypothesis combines three concerns:
 
-> This repository is currently being reoriented. The existing planner/executor implementation is preserved as an early prototype and should not be read as the final architecture.
+> **Agentic BizOps + Organizational Digital Twin + Organizational Adaptation**
 
-## The organizational model
+This is a working architecture, not a claim that the final model is already known.
+
+## Why this project exists
+
+Traditional software usually models applications and workflows. Agentic systems make it possible to experiment with something larger: the organization itself as a dynamic system.
+
+Bionic Company investigates an organization in which:
+
+- humans provide strategic direction, priorities, policies, budgets and constraints;
+- initiatives move through the organization without belonging permanently to a department or software domain;
+- autonomous domains expose business capabilities and decide how their internal work is performed;
+- agentic workforces can be composed, reorganized and retired according to changing needs;
+- organizational signals keep a digital representation synchronized with real activity;
+- observed flows and outcomes can later support scenario simulation and decision-making.
+
+The goal is not to build a universal autonomous company in one step. The repository is intended to evolve through small, testable implementations.
+
+## Core principles
+
+### Strategy governs; autonomy operates
+
+Human governance is primarily concerned with **direction and boundaries**: strategy, objectives, priorities, budgets, risk tolerance, policies and other constraints.
+
+Within that authority envelope, the organization may autonomously decide how to organize work, including how many agents are useful, how teams are composed, how work is distributed and when capacity should be reassigned or retired.
+
+Human gates may exist where strategy, policy, risk or another explicit constraint requires them; they are not assumed for every internal agent decision.
+
+### Initiatives do not belong to domains
+
+An initiative represents something the organization is pursuing. It is not structurally owned by a particular application or domain.
+
+As its state and direction change, different capabilities may become relevant:
 
 ```text
-                         BIONIC COMPANY
-              BizOps + Twin + Adaptation
-                              │
-              Strategy / Objectives / State
-                              │
-             Outcomes / Constraints / Signals
-                              │
-              ┌───────────────┼───────────────┐
-              ▼               ▼               ▼
-          KDP Studio      Cine Toaster       Pulse
-           Editorial       Audiovisual      Market &
-                                          Relationships
+Initiative + Current State + Direction
+                  │
+                  ▼
+                BizOps
+                  │
+                  ▼
+        Capability required now
+                  │
+                  ▼
+         Capability resolution
+                  │
+                  ▼
+        Domain / Agent / Resource
+                  │
+                  ▼
+           Result + Signals
+                  │
+                  ▼
+        Updated Initiative State
 ```
 
-The three operating domains remain autonomous applications. Bionic Company coordinates at the organizational level rather than absorbing their internal agents and workflows.
+Domains can evolve, capabilities can move, and new resources can appear without requiring the initiative itself to be redesigned.
 
-### KDP Studio
+### Domains remain autonomous
 
-Editorial production. Bionic Company may request an editorial outcome; KDP Studio owns how that outcome is produced.
+Bionic Company operates at the organizational level. It should not become a universal task executor.
 
-### Cine Toaster
+A domain may receive an organizational outcome, priority, deadline, policy or resource constraint. The domain decides how to achieve that outcome using its own agents, workflows, models and tools.
 
-Audiovisual production. Bionic Company may request an audiovisual outcome; Cine Toaster owns its production workflow.
-
-### Pulse
-
-Market intelligence, audiences, relationships, communication, communities and reputation. Pulse represents an important interface between the organization and its external environment.
+> **Bionic Company defines direction and desired outcomes; domains determine their internal execution.**
 
 ## Agentic BizOps
 
-BizOps is the bridge between strategy and operation.
+BizOps connects organizational intent with execution without absorbing operational workflows.
 
-Bionic Company may work with:
+Its concerns may include:
+
 - strategy and objectives;
 - initiatives and desired outcomes;
-- priorities;
-- policies and constraints;
-- resources and budgets;
+- priorities and policies;
+- resource and budget constraints;
+- capability resolution;
 - cross-domain coordination;
-- risks;
-- organizational performance.
+- organizational risks and performance.
 
-It should not prescribe prompts, tools, models, task graphs or production steps inside a domain.
+Conceptually:
 
 ```text
-Strategy
-   ↓
-Objectives
-   ↓
-Initiatives
-   ↓
-Outcomes + Constraints
-   ↓
-Domain Execution
-   ↓
-Results + Cost + Risk + Metrics
-   ↓
+Strategy / Direction
+        ↓
+     Initiative
+        ↓
+      BizOps
+        ↓
+Capabilities & Resources
+        ↓
+ Autonomous Execution
+        ↓
+Results / Cost / Risk / Signals
+        ↓
 Organizational Understanding
-   ↺
+        ↺
 ```
 
-## Organizational Twin
+## Organizational Digital Twin
 
-The Organizational Twin is intended to become a living representation of the company.
+The Organizational Digital Twin is intended to become a living model of the organization rather than merely an organizational chart or dashboard.
 
-It may show domains, business capabilities, initiatives, resources, agents, dependencies, financial/performance state and relevant external signals.
+It has two primary purposes.
 
-Agents from KDP Studio, Cine Toaster and Pulse may be visible in the twin for organizational understanding. Visibility does **not** imply that Bionic Company directly controls their operational work.
+### Observe and map
 
-## Organizational Adaptation
+The twin should represent the organization's **current state, flows, processes, capabilities, agents, resources and temporary relationships**.
 
-Bionic Company is intended to be more than a static set of predefined agents. The organization should be able to identify capability gaps, adapt its agentic workforce and sustain the platform that enables it.
+A relationship such as an initiative currently working with an audiovisual domain describes what is happening at that moment. It does not mean that the initiative permanently belongs to that domain.
 
-Two mechanisms are currently distinguished:
+Over time, the twin can accumulate organizational memory about how work and value actually flow.
 
-- **Meta-Agent / Agent Workforce** — concerned with creating, configuring, evaluating, adapting and retiring organizational agents when new capabilities are needed.
-- **Development / DevOps / SRE** — concerned with maintaining and evolving the Bionic Company platform itself: code, releases, infrastructure, observability, reliability and incidents.
+### Simulate
 
-These are related but different forms of evolution. The Meta-Agent changes the organization's agentic capacity; Dev/DevOps/SRE sustain the technical system on which that capacity runs.
+The same representation may later support **what-if analysis**.
 
-Operating domains may have their **own** equivalent mechanisms. For example, a Cine Toaster SRE agent belongs to Cine Toaster and understands its infrastructure and production environment. Bionic Company may observe organizational signals such as reliability, cost or capability gaps without micromanaging how the domain responds.
+The organization could compare possible directions using observed information about time, cost, capacity, dependencies, risks and outcomes:
+
+```text
+Current State
+     │
+     ├── Scenario A → possible consequences
+     ├── Scenario B → possible consequences
+     └── Scenario C → possible consequences
+                         │
+                         ▼
+                      Decision
+                         │
+                         ▼
+                   Real execution
+                         │
+                         ▼
+                       Signals
+                         │
+                         └──→ Twin learns / updates
+```
+
+Simulation is decision support, not certainty about the future. Real execution provides evidence that can progressively improve the model.
+
+## Organizational adaptation
+
+A bionic organization should not require a permanently predefined workforce.
+
+A **Meta-Agent / Agent Workforce** capability may identify missing capacity and create, configure, specialize, compose, reassign or retire organizational agents as needs change.
+
+Bionic Company also has technical needs of its own. Development, DevOps, SRE, FinOps and other specializations may emerge to maintain, evolve, observe and optimize the organizational platform itself.
+
+The same principle can exist recursively inside autonomous domains: a domain may maintain its own agents responsible for development, reliability or adaptation.
 
 > **Self-maintaining domains; self-evolving organization.**
 
-This adaptation is expected to be governed. Agent creation or removal does not imply unrestricted autonomous self-modification; human approval, policies, security and cost constraints may apply.
+The architecture intentionally does not attempt to enumerate every future organizational specialization in advance. New capabilities should emerge from real needs.
 
-## Architectural boundary
+## Validation environment
 
-Bionic Company deals primarily in **organizational intent and organizational results**.
+The first validation environment is deliberately concrete.
 
-A domain may receive an objective, desired outcome, priority, deadline, policy or resource envelope. It may return status, progress, results, cost, risks, forecasts and relevant KPIs.
+Bionic Company is currently being explored alongside three autonomous agentic domains:
 
-Task decomposition, agent routing, prompts, tools, providers and production workflows remain inside the domain.
+- **KDP Studio** — editorial production;
+- **Cine Toaster** — audiovisual production;
+- **Pulse** — market intelligence, relationships, communication, community and reputation.
 
-> **Sharing infrastructure does not imply sharing domain responsibility.**
+Two real initiatives provide initial scenarios:
 
-## Technology
+- **Singular** — a creative initiative that can move between editorial, audiovisual and market-facing activity;
+- **A Era dos Agentes** — an editorial initiative that can also require other organizational capabilities as it evolves.
 
-The original AgentOS prototype explored:
-- LangChain;
-- LangGraph;
-- Ollama;
-- FastAPI;
-- AG-UI;
-- MCP;
-- A2A;
-- digital twins;
-- simulation.
+These projects are **not the architecture of Bionic Company**. They are its current validation environment.
 
-These technologies remain candidates, but they are now subordinate to the organizational architecture. The product is not defined by a specific agent framework or protocol.
+The intended concepts should be able to generalize to other organizations, domains, initiatives and operating scenarios. The architecture should therefore avoid hard-coding assumptions that only make sense for this ecosystem.
 
-## Current prototype
+## A first validation path
 
-The code currently implements an early experimental flow:
+The project will initially favor a small vertical slice over a complete organizational ontology.
+
+A useful progression is:
+
+```text
+M0 — Observe
+Represent enough organizational state to see real initiatives,
+domains, capabilities, agents and activity.
+
+M1 — Direct
+Receive organizational direction and allow BizOps to relate
+an initiative's current needs to available capabilities.
+
+M2 — Adapt
+Allow the organization to reorganize its agentic workforce
+within its authority and constraints.
+
+M3 — Learn & Simulate
+Use observed flows, costs, outcomes and signals to improve
+organizational understanding and explore alternative scenarios.
+```
+
+Concepts should enter the implementation when they are needed to validate the next hypothesis, rather than because they might eventually be useful.
+
+## From AgentOS to Bionic Company
+
+The original prototype implemented a simple experimental flow:
 
 ```text
 Goal → Planner Agent → First Action → Executor Agent
 ```
 
-The planner creates a digital-transformation plan and the executor describes how an action could be performed. This code is being kept as historical/prototyping material while the new architecture is defined.
+That experiment remains useful history. It demonstrated an initial form of agentic planning and execution, but it coupled organizational reasoning too closely to a generic planner/executor workflow.
 
-Current implementation areas include:
+The emerging model moves the abstraction upward:
 
 ```text
-agents/
-  planner_agent.py
-  executor_agent.py
-
-langgraph/
-  digital_plan_graph.py
-
-app/
-  api.py
-  agui/
-
-main.py
+Human Direction / Organizational Context
+                  ↓
+                BizOps
+                  ↓
+              Initiative
+                  ↓
+        Dynamic Capability Use
+                  ↓
+         Autonomous Execution
+                  ↓
+               Signals
+                  ↓
+      Organizational Digital Twin
+                  ↓
+       Understanding / Simulation
+                  ↓
+       Decision / Adaptation
 ```
 
-Do not interpret this flow as the target operating model of Bionic Company.
+The existing prototype code is intentionally preserved while this transition is implemented incrementally.
 
-## Architectural draft
+## Technology
 
-The first working theory is documented in:
+The project has experimented with or is considering technologies such as:
+
+- LangChain and LangGraph;
+- Ollama and other model providers;
+- FastAPI;
+- AG-UI;
+- MCP;
+- A2A;
+- event-driven integration;
+- digital-twin and simulation techniques.
+
+No framework or protocol defines the project. Technology choices should follow the organizational model and the hypotheses being tested.
+
+## Architecture notes
+
+The evolving working theory is documented in:
 
 **[docs/organizational-model.md](docs/organizational-model.md)**
 
-It describes:
-- Agentic BizOps;
-- the Organizational Twin;
-- organizational adaptation and the Agent Workforce;
-- Meta-Agent, Development, DevOps and SRE responsibilities;
-- recursive domain autonomy;
-- autonomous business domains;
-- the strategy-to-operation boundary;
-- coarse business capabilities;
-- finance and organizational performance as an open design area;
-- interoperability;
-- open architectural questions.
-
-## Near-term direction
-
-The immediate goal is not to add more agents. It is to establish the smallest useful organizational model and validate it against real cross-domain scenarios involving KDP Studio, Cine Toaster and Pulse.
-
-Likely next steps are:
-1. define minimal organizational entities and contracts;
-2. model the three real domains in the twin;
-3. define intent/result exchanges between Bionic Company and domains;
-4. revisit the planner/executor prototype against those contracts;
-5. model organizational capability gaps and governed adaptation;
-6. let real organizational use cases drive additional capabilities.
+That document contains the more detailed architectural discussion, boundaries and open questions. The README intentionally stays focused on what the project is, why it exists and how the current validation environment relates to the broader idea.
 
 ## Status
 
-**Early architectural reorientation / working theory.**
+**Experimental / early architectural validation.**
 
-The project intentionally keeps several questions open, including finance, tactical boundaries, organizational KPIs, agent visibility, event contracts and simulation.
+Bionic Company is not presented as a finished reference architecture. Its purpose is to turn ideas about bionic organizations into executable experiments, learn from real initiatives and progressively discover which abstractions are actually useful.
 
 ## Author
 
