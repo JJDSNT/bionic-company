@@ -61,6 +61,16 @@ def initiative(org: organization.Organization, args: argparse.Namespace) -> int:
         print(f"  {item.intent}")
     print(f"\n{view.signal_count} signals")
 
+    print("\nPath (work units in order of first signal)")
+    for u in view.work_units:
+        print(f"  {u.first_signal_at[:10]} → {u.last_signal_at[:10]}  {u.unit:34} {', '.join(u.capabilities)}"
+              f"  ({u.signal_count} signals)")
+    flows = [f for f in org.flows if f.initiative == item.id]
+    if flows:
+        print("\nFlows")
+        for f in flows:
+            print(f"  {f.source} —{f.relation}→ {f.target}" + (f"   {f.note}" if f.note else ""))
+
     print("\nParticipation")
     for p in view.participations:
         cost = ", ".join(f"{v:.2f} {k}" for k, v in p.cost.items()) or "no cost recorded"
@@ -97,6 +107,9 @@ def overview(org: organization.Organization, args: argparse.Namespace) -> int:
     for cap in org.capabilities.values():
         providers = org.providers(cap.id)
         print(f"  {cap.id:26} {', '.join(providers) if providers else 'GAP — no provider'}")
+    external = [d.id for d in org.domains.values() if d.kind == "external"]
+    if external:
+        print(f"\nWork observed outside autonomous domains: {', '.join(external)}")
     loose = twin.unbound(org, signals)
     if loose:
         print("\nWork units reporting signals but bound to no initiative")

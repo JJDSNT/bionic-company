@@ -203,3 +203,48 @@ def test_cine_open_gates_and_cost_reach_the_initiative(tmp_path):
     assert view.cost == {"USD": 0.2}
     assert view.unpriced == {"count": 1, "seconds": 360.0}
 
+
+
+def test_an_initiative_crosses_domains_through_declared_flows(tmp_path):
+    from bionic.adapters import manual
+
+    org_root = tmp_path / "org"
+    (org_root / "manual").mkdir(parents=True)
+    (org_root / "manual" / "work.yaml").write_text(yaml.safe_dump({
+        "work_unit_ref": "the-novel", "capability": "editorial-production",
+        "signals": [
+            {"id": "v1", "type": "version.recorded", "occurred_at": "2025-07-17T20:00:00Z",
+             "actor": {"id": "author", "kind": "human"}, "summary": "Novel v1", "evidence": "novel.pdf"},
+            {"id": "script", "type": "version.recorded", "occurred_at": "2026-09-15T20:00:00Z",
+             "work_unit_ref": "the-script", "capability": "audiovisual-production",
+             "actor": {"id": "author", "kind": "human"}, "summary": "Screenplay"},
+        ]}), "utf-8")
+    (org_root / "organization.yaml").write_text(yaml.safe_dump({
+        "organization": {"id": "test", "name": "Test"},
+        "domains": [{"id": "manual", "name": "By hand", "kind": "external"}],
+        "capabilities": [{"id": "editorial-production", "name": "E"}, {"id": "audiovisual-production", "name": "A"}],
+        "initiatives": [{"id": "story", "name": "Story"}],
+        "bindings": [{"initiative": "story", "domain": "manual", "work_unit_ref": "the-novel"},
+                     {"initiative": "story", "domain": "manual", "work_unit_ref": "the-script"}],
+        "flows": [{"initiative": "story", "source": "manual/the-novel", "target": "manual/the-script",
+                   "relation": "adapted into"}],
+        "sources": [{"domain": "manual", "path": "manual/work.yaml"}],
+    }), "utf-8")
+    org = organization.load(org_root)
+    signals = list(manual.signals(org.sources[0].path))
+
+    view = twin.initiative_view(org, signals, "story")
+    assert [u.unit for u in view.work_units] == ["manual/the-novel", "manual/the-script"]
+    assert signals[0].data["evidence"] == "novel.pdf"
+    assert org.domains["manual"].kind == "external"
+
+
+def test_a_flow_must_join_bound_work_units(tmp_path):
+    book = make_book(tmp_path / "book", HISTORY, git=False)
+    org = make_org(tmp_path / "org", book)
+    raw = yaml.safe_load((org.root / "organization.yaml").read_text("utf-8"))
+    raw["flows"] = [{"initiative": "the-book", "source": "kdp-studio/test-book", "target": "nowhere/x",
+                     "relation": "feeds"}]
+    (org.root / "organization.yaml").write_text(yaml.safe_dump(raw), "utf-8")
+    with pytest.raises(ContractError, match="no binding declares"):
+        organization.load(org.root)

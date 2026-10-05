@@ -1,0 +1,37 @@
+# The Singular book and its screenplay, made by hand before any domain existed. Not yet in KDP Studio.
+# Dates are the files' own (modification times), so each entry cites its evidence.
+work_unit_ref: singular-book
+capability: editorial-production
+signals:
+  - id: book-cover
+    type: version.recorded
+    occurred_at: 2025-07-16T11:34:20Z
+    actor: {id: jaime, kind: human}
+    summary: Cover (Portuguese)
+    evidence: ~/confyui/singular/livro/singular/cover.jpg
+  - id: book-v1
+    type: version.recorded
+    occurred_at: 2025-07-17T20:04:58Z
+    actor: {id: jaime, kind: human}
+    summary: Book, version 1 (ODT, PDF)
+    evidence: ~/confyui/singular/livro/singular/Singular_versao1.pdf
+  - id: book-covers-en-es
+    type: version.recorded
+    occurred_at: 2025-07-21T16:22:22Z
+    actor: {id: jaime, kind: human}
+    summary: Covers in English and Spanish
+    evidence: ~/confyui/singular/livro/singular/cover_en.jpg
+  - id: screenplay
+    type: version.recorded
+    occurred_at: 2026-09-15T23:50:44Z
+    actor: {id: jaime, kind: human}
+    work_unit_ref: singular-screenplay
+    capability: audiovisual-production
+    summary: Screenplay adapted from the book, written outside Cine Toaster
+    evidence: ~/confyui/singular/livro/singular/roteiro.odt
+  - id: book-v2
+    type: version.recorded
+    occurred_at: 2026-09-16T00:27:03Z
+    actor: {id: jaime, kind: human}
+    summary: Book, version 2 (ODT, EPUB), the day after the screenplay
+    evidence: ~/confyui/singular/livro/singular/Singular_versao2.epub

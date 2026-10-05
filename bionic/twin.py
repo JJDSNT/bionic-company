@@ -58,8 +58,19 @@ class Participation:
 
 
 @dataclass
+class WorkUnit:
+    unit: str
+    domain: str
+    capabilities: list[str]
+    first_signal_at: str
+    last_signal_at: str
+    signal_count: int
+
+
+@dataclass
 class InitiativeView:
     initiative: str
+    work_units: list[WorkUnit]
     participations: list[Participation]
     decisions: list[Signal]
     open_gates: list[Signal]
@@ -82,7 +93,16 @@ def initiative_view(org: Organization, signals: Iterable[Signal], initiative: st
     total: dict[str, float] = defaultdict(float)
     gates: dict[str, Signal] = {}
     unpriced = {"count": 0, "seconds": 0.0}
+    units: dict[str, WorkUnit] = {}
     for s in mine:
+        name = f"{s.domain_id}/{s.work_unit_ref}"
+        unit = units.get(name)
+        if unit is None:
+            unit = units[name] = WorkUnit(name, s.domain_id, [], s.occurred_at, s.occurred_at, 0)
+        unit.last_signal_at = s.occurred_at
+        unit.signal_count += 1
+        if s.capability not in unit.capabilities:
+            unit.capabilities.append(s.capability)
         key = (s.domain_id, s.capability)
         p = by_pair.get(key)
         if p is None:
@@ -104,6 +124,7 @@ def initiative_view(org: Organization, signals: Iterable[Signal], initiative: st
 
     return InitiativeView(
         initiative=initiative,
+        work_units=sorted(units.values(), key=lambda u: u.first_signal_at),
         participations=sorted(by_pair.values(), key=lambda p: p.first_signal_at),
         decisions=[s for s in mine if s.type in ("decision.recorded", "gate.decided")],
         open_gates=sorted(gates.values(), key=lambda s: s.occurred_at),

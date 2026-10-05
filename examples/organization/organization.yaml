@@ -9,6 +9,7 @@ domains:
   - {id: kdp-studio,   name: KDP Studio,   status: active}
   - {id: cine-toaster, name: Cine Toaster, status: active}
   - {id: pulse,        name: Pulse,        status: planned}
+  - {id: manual,       name: Outside any domain (by hand), kind: external}
 
 capabilities:
   - id: editorial-production
@@ -36,9 +37,17 @@ initiatives:
 
 bindings:
   - {initiative: a-era-dos-agentes, domain: kdp-studio, work_unit_ref: a-era-dos-agentes}
+  - {initiative: singular, domain: manual,       work_unit_ref: singular-book}
+  - {initiative: singular, domain: manual,       work_unit_ref: singular-screenplay}
   - {initiative: singular, domain: cine-toaster, work_unit_ref: singular}
+
+# How work units feed one another. Domains do not know each other; the organization records it.
+flows:
+  - {initiative: singular, source: manual/singular-book,       target: manual/singular-screenplay, relation: adapted into}
+  - {initiative: singular, source: manual/singular-screenplay, target: cine-toaster/singular,       relation: produced as}
 
 # Where adapters read each domain's work units. Local to this machine.
 sources:
   - {domain: kdp-studio, path: ~/books/a-era-dos-agentes}
   - {domain: cine-toaster, path: ~/films/singular}
+  - {domain: manual,       path: manual/singular-book.yaml}

@@ -48,6 +48,7 @@ An autonomous operating domain.
 | `id` | e.g. `kdp-studio`, `cine-toaster`, `pulse` |
 | `name` | |
 | `status` | `active` · `planned` · `retired` |
+| `kind` | `autonomous` (behind the contract) · `external` (work done by hand, by a vendor, or before a domain existed; observed through manual signals, never directed) |
 
 ### Capability
 
@@ -96,6 +97,18 @@ The link between an initiative and a domain's own unit of work (a book directory
 | `since` / `until` | |
 
 **Domains do not need to know initiatives exist.** Bionic Company keeps the binding. KDP Studio keeps producing a book; Bionic Company knows the book currently serves *A Era dos Agentes*. This keeps initiatives out of domain models and lets the binding change without touching the domain.
+
+### Flow
+
+One work unit feeding another within an initiative, for example a book adapted into a screenplay.
+
+| Field | Notes |
+|---|---|
+| `initiative` | |
+| `source` / `target` | Work units, written `<domain>/<work_unit_ref>`; both must be bound to the initiative |
+| `relation` | Free text: `adapted into`, `produced as`, `promoted by` |
+
+Domains do not know each other, so no domain can report a flow. **The organization records it.**
 
 ### Participation (derived)
 
@@ -332,6 +345,36 @@ M0 is complete when, for **Singular** and **A Era dos Agentes**, the twin can an
 
 And: rebuilding all projections from the log gives the same answers.
 
+## Cross-domain validation: Singular
+
+Before M1, the model was checked against the one initiative that already crosses domains. *Singular* is a book written by hand in 2025, not yet in KDP Studio. It was adapted into a screenplay in September 2026 and is being produced as a film in Cine Toaster.
+
+```text
+2025-07-16 → 2026-09-16  manual/singular-book          editorial-production
+2026-09-15               manual/singular-screenplay    audiovisual-production
+2026-09-17 → 2026-10-04  cine-toaster/singular         audiovisual-production
+
+manual/singular-book —adapted into→ manual/singular-screenplay —produced as→ cine-toaster/singular
+```
+
+What held:
+
+- **One initiative, several work units, several providers.** Bindings already allowed this. The signal contract did not change.
+- **Initiatives do not belong to domains.** Singular's identity is untouched by which domain is working on it.
+
+What had to be added:
+
+- **External domains.** Work happens outside the autonomous domains: by hand, before a domain existed, or by a vendor. Without a place for it, the twin would show Singular starting in September 2026 instead of July 2025.
+- **Manual signals.** A human-written file of signals, each citing its evidence. It is another adapter, not a special case.
+- **Flows as organizational records.** "The film adapts the book" is the most important fact about Singular's path, and no domain can report it.
+
+What it showed:
+
+- **Provision is not participation.** KDP Studio is the declared provider of editorial production. Singular's editorial work was done elsewhere. The twin keeps both facts: who is *expected* to provide a capability, and who *actually* did. This distinction is the input M1's capability resolution needs.
+- **Timing is not causation.** Book v2 is dated the day after the screenplay. The twin shows the timing; whether the film fed back into the book is a flow only the organization can declare. Flows are declared, never inferred, for now.
+- **Provider change is a binding change.** When the book moves into KDP Studio, `manual/singular-book` gets an `until` and a `kdp-studio` binding starts. The initiative, its history and its flows stay as they are.
+- **The next need is a gap.** Singular's next step, a launch, requires `market-relationships`, which has no provider. That is M1's first case: the organization expresses a need nobody can serve yet.
+
 ## Running it
 
 The `bionic/` package implements the contract, the twin log and the KDP Studio adapter. The legacy AgentOS prototype is untouched.
@@ -352,4 +395,5 @@ uv run pytest
 2. **Adapter location.** Inside Bionic Company, reading domain files, or published by each domain. Inside Bionic for M0, to require no domain changes.
 3. **Signal id derivation** for sources without ids, such as git commits and `state.json` entries.
 4. **Whether `outcome.delivered` needs a human confirmation** or can be inferred, for example from `kdp check` passing.
-5. **How Singular's pre-Cine-Toaster history is represented.** Its manual `versoes/` folders could be ingested as historical signals, or M0 could start at its migration.
+5. ~~How Singular's pre-Cine-Toaster history is represented.~~ Resolved: Cine Toaster's migration recorded it as imported versions, and the book and screenplay before it are manual signals.
+6. **Whether flows can ever be inferred**, for example from a production keeping its source book in `story/book`, or must always be declared.

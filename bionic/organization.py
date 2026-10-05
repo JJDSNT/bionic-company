@@ -19,11 +19,23 @@ from .contract import ContractError
 FILENAME = "organization.yaml"
 
 
+DOMAIN_KINDS = {"autonomous", "external"}
+
+
 @dataclass(frozen=True)
 class Domain:
+    """Who does work. ``autonomous``: a domain behind the contract. ``external``: work
+    the organization does or buys outside its domains (by hand, a freelancer, a
+    vendor); it is observed through manual signals, never directed."""
+
     id: str
     name: str
     status: str = "active"
+    kind: str = "autonomous"
+
+    def __post_init__(self) -> None:
+        if self.kind not in DOMAIN_KINDS:
+            raise ContractError(f"Unknown domain kind {self.kind!r}; allowed: {sorted(DOMAIN_KINDS)}")
 
 
 @dataclass(frozen=True)
@@ -61,6 +73,21 @@ class Binding:
 
 
 @dataclass(frozen=True)
+class Flow:
+    """One work unit feeding another within an initiative: a book a film adapts.
+
+    Domains do not know each other, so no domain can report this; the
+    organization records it. Work units are written ``<domain>/<work_unit_ref>``.
+    """
+
+    initiative: str
+    source: str
+    target: str
+    relation: str
+    note: str = ""
+
+
+@dataclass(frozen=True)
 class Source:
     """Where an adapter reads a domain's work unit. Not part of the contract."""
 
@@ -78,6 +105,7 @@ class Organization:
     provisions: list[Provision] = field(default_factory=list)
     initiatives: dict[str, Initiative] = field(default_factory=dict)
     bindings: list[Binding] = field(default_factory=list)
+    flows: list[Flow] = field(default_factory=list)
     sources: list[Source] = field(default_factory=list)
 
     @property
@@ -126,7 +154,8 @@ def load(root: Path) -> Organization:
         provisions=[Provision(**p) for p in raw.get("provisions") or []],
         initiatives=_by_id(raw.get("initiatives"), Initiative, "initiative"),
         bindings=[Binding(**b) for b in raw.get("bindings") or []],
-        sources=[Source(domain=s["domain"], path=Path(s["path"]).expanduser())
+        flows=[Flow(**f) for f in raw.get("flows") or []],
+        sources=[Source(domain=s["domain"], path=root / Path(s["path"]).expanduser())
                  for s in raw.get("sources") or []],
     )
     _check_references(organization)
@@ -146,6 +175,13 @@ def _check_references(org: Organization) -> None:
             raise ContractError(f"Binding names unknown initiative {b.initiative!r}")
         if b.domain not in org.domains:
             raise ContractError(f"Binding names unknown domain {b.domain!r}")
+    bound = {f"{b.domain}/{b.work_unit_ref}" for b in org.bindings}
+    for f in org.flows:
+        if f.initiative not in org.initiatives:
+            raise ContractError(f"Flow names unknown initiative {f.initiative!r}")
+        for unit in (f.source, f.target):
+            if unit not in bound:
+                raise ContractError(f"Flow names work unit {unit!r}, which no binding declares")
     for s in org.sources:
         if s.domain not in org.domains:
             raise ContractError(f"Source names unknown domain {s.domain!r}")
