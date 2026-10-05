@@ -24,13 +24,16 @@ DECISIONS_FILENAME = "decisions.jsonl"
 # transition -> the statuses it may follow
 TRANSITIONS: dict[str, set[str]] = {
     "stated": set(),
-    "resolved": {"stated", "resolved", "gap"},
-    "gap": {"stated", "resolved", "gap"},
+    "resolved": {"stated", "resolved", "gap", "blocked"},
+    "gap": {"stated", "resolved", "gap", "blocked"},
     "option_chosen": {"gap"},
     "handed_off": {"resolved"},
     "fulfilled": {"handed_off", "in_progress"},
-    "withdrawn": {"stated", "resolved", "gap", "handed_off", "in_progress"},
+    "withdrawn": {"stated", "resolved", "gap", "handed_off", "in_progress", "blocked"},
 }
+# The command a person or agent uses for each transition; authority is granted per command.
+ACTIONS = {"stated": "state", "resolved": "resolve", "gap": "resolve", "option_chosen": "choose",
+           "handed_off": "handoff", "fulfilled": "fulfil", "withdrawn": "withdraw"}
 GAP_OPTIONS = ("wait", "external", "adapt")
 
 
@@ -49,6 +52,8 @@ class Intent:
     rationale: str = ""
     options: list[str] = field(default_factory=list)
     option: str = ""
+    lands_with: str = ""
+    missing: list[dict[str, Any]] = field(default_factory=list)
     handed_off_at: str = ""
     progress: list[Signal] = field(default_factory=list)
     history: list[Signal] = field(default_factory=list)
@@ -60,6 +65,8 @@ class Resolution:
     provider: str
     rationale: str
     options: list[str] = field(default_factory=list)
+    lands_with: str = ""  # a gap of transformation: the provider the outcome would reach
+    missing: list[dict[str, Any]] = field(default_factory=list)
 
 
 class DecisionLog:
@@ -118,6 +125,8 @@ def intents(org: Organization, decisions: Iterable[Signal], signals: Iterable[Si
             intent.provider = d.data.get("provider", "")
             intent.rationale = d.data.get("rationale", "")
             intent.options = list(d.data.get("options") or [])
+            intent.lands_with = d.data.get("lands_with", "")
+            intent.missing = list(d.data.get("missing") or [])
             intent.option = ""
         if transition == "option_chosen":
             intent.option = d.data.get("option", "")
@@ -131,6 +140,10 @@ def intents(org: Organization, decisions: Iterable[Signal], signals: Iterable[Si
             intent.progress = _progress(org, intent, signals)
             if intent.progress:
                 intent.status = "in_progress"
+            # The provider says it cannot go on: the resolution was wrong, or something is missing.
+            raised = [s for s in intent.progress if s.type in ("blocker.raised", "blocker.cleared")]
+            if raised and raised[-1].type == "blocker.raised":
+                intent.status = "blocked"
     return out
 
 
@@ -152,8 +165,23 @@ def _progress(org: Organization, intent: Intent, signals: Iterable[Signal]) -> l
     return sorted(found, key=lambda s: s.occurred_at)
 
 
-def resolve(org: Organization, signals: Iterable[Signal], intent: Intent) -> Resolution:
-    """Relate the need to the capabilities available. A rule, explained; a person accepts it."""
+def accepted_inputs(manifests: dict[str, dict[str, Any]], domain: str, capability: str) -> list[str] | None:
+    """What a provider declares it can work from, for this capability. None: not declared, unknown."""
+
+    for provided in (manifests.get(domain) or {}).get("provides", []):
+        if provided.get("capability") == capability:
+            return provided.get("accepts")
+    return None
+
+
+def resolve(org: Organization, signals: Iterable[Signal], intent: Intent,
+            manifests: dict[str, dict[str, Any]] | None = None) -> Resolution:
+    """Relate the need to the capabilities available. A rule, explained; a person accepts it.
+
+    Two questions: who provides the capability, and whether that provider can
+    work from what the intent draws on. A provider that cannot is not a
+    resolution: the transformation in between is a gap of its own.
+    """
 
     capability = org.capabilities.get(intent.capability)
     if capability is None:
@@ -168,6 +196,7 @@ def resolve(org: Organization, signals: Iterable[Signal], intent: Intent) -> Res
     notes = []
     if observed:
         notes.append(f"this initiative's {capability.name.lower()} so far was done by {', '.join(observed)}")
+    observed_note = (" Observed: " + "; ".join(notes) + ".") if notes else ""
 
     if not providers:
         planned = [p.domain for p in org.provisions if p.capability == intent.capability and not p.until
@@ -178,10 +207,7 @@ def resolve(org: Organization, signals: Iterable[Signal], intent: Intent) -> Res
             "external: have it done outside the domains" + (f" (as before: {', '.join(external)})" if external else ""),
             "adapt: create the capability (M2)" + (f"; planned provider: {', '.join(planned)}" if planned else ""),
         ]
-        rationale = f"No active domain provides {capability.name.lower()}."
-        if notes:
-            rationale += " Observed: " + "; ".join(notes) + "."
-        return Resolution("gap", "", rationale, options)
+        return Resolution("gap", "", f"No active domain provides {capability.name.lower()}.{observed_note}", options)
 
     if custodian in providers:
         chosen, why = custodian, f"{custodian} already has custody of {product.id}"
@@ -191,9 +217,32 @@ def resolve(org: Organization, signals: Iterable[Signal], intent: Intent) -> Res
         ranked = sorted(providers, key=lambda d: (d not in observed, d))
         chosen, why = ranked[0], f"{ranked[0]} chosen among {', '.join(providers)}" + (
             ", having done this initiative's work before" if ranked[0] in observed else "")
-    rationale = f"{why}."
-    if notes:
-        rationale += " Observed: " + "; ".join(notes) + "."
+
+    accepts = accepted_inputs(manifests or {}, chosen, intent.capability)
+    if accepts is not None:
+        missing = []
+        for item in intent.draws_on:
+            source = org.products.get(item["product"])
+            if source and source.kind and source.kind not in accepts:
+                missing.append({"product": source.id, "kind": source.kind, "accepted": list(accepts)})
+        if missing:
+            kinds = ", ".join(sorted({m["kind"] for m in missing}))
+            names = ", ".join(m["product"] for m in missing)
+            wanted = " or ".join(accepts)
+            rationale = (f"{chosen} provides {capability.name.lower()} and would receive the outcome, but it works "
+                         f"from {', '.join(accepts)}, not {kinds}. Turning {names} into {wanted} for it has no "
+                         f"provider: a missing transformation, not a missing {capability.name.lower()}."
+                         + observed_note)
+            options = [
+                "wait: keep the need open and visible",
+                f"external: have the transformation done outside the domains and hand {chosen} the result",
+                f"adapt: create a capability that turns {kinds} into {wanted} (M2)",
+            ]
+            return Resolution("gap", "", rationale, options, lands_with=chosen, missing=missing)
+
+    rationale = f"{why}.{observed_note}"
+    if accepts is None and intent.draws_on:
+        rationale += f" {chosen} does not declare what it works from, so its inputs were not checked."
     if product and custodian and custodian != chosen:
         rationale += f" Custody of {product.id} moves from {custodian} to {chosen}."
     return Resolution("resolved", chosen, rationale)

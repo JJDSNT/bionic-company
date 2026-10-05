@@ -252,6 +252,14 @@ The envelope carries the desired outcome, where it lands in the provider's own t
 
 The three envelopes are published as JSON Schema in [`contract/`](../contract/). The `bionic` package is one implementation, and its tests validate everything it produces against them.
 
+## Development knowledge is not organizational knowledge
+
+Bionic Company reasons only over **organizational knowledge**: `organization.yaml`, the organization's decisions, the domains' signals and manifests.
+
+The repository's documentation, including design notes and learning cases, is **development knowledge**. It must never be fed to Bionic Company or to any of its agents as context. Some learning cases are answer keys for blind tests of what the organization can discover by itself, and exposing them would invalidate the tests.
+
+Cine Toaster follows the same rule: its development memory is never exposed as a runtime filmmaking skill.
+
 ## The twin in M0
 
 The twin is an **append-only signal log owned by Bionic Company**, plus projections derived from it.

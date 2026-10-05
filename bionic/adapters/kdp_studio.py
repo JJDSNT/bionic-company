@@ -31,7 +31,9 @@ CAPABILITY = "editorial-production"
 MANIFEST = {
     "domain": {"id": DOMAIN, "name": "KDP Studio"},
     "contract_version": CONTRACT_VERSION,
-    "provides": [{"capability": CAPABILITY, "outcomes": ["book", "edition", "translation"]}],
+    # A manuscript and text: the author's documents, research sources, a book being revised.
+    "provides": [{"capability": CAPABILITY, "outcomes": ["book", "edition", "translation"],
+                  "accepts": ["book", "text"]}],
     "work_unit": {"kind": "book", "ref_field": "book.yaml id"},
     "signals": ["decision.recorded", "gate.opened", "gate.decided", "version.recorded"],
 }

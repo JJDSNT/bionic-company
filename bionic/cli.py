@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import bizops, organization, twin
-from .adapters import ADAPTERS
+from .adapters import ADAPTERS, MANIFESTS
 from .contract import Actor, ContractError
 
 
@@ -59,7 +59,8 @@ def main(argv: list[str] | None = None) -> int:
         steps.add_parser(name).add_argument("id")
     for step in (stated, resolve_parser, choose,
                  *(steps.choices[n] for n in ("handoff", "fulfil", "withdraw", "envelope"))):
-        step.add_argument("--by", default=os.environ.get("USER", "unknown"), help="who decides (a person)")
+        step.add_argument("--by", default=os.environ.get("USER", "unknown"), help="who decides")
+        step.add_argument("--kind", default="human", choices=("human", "agent"), help="a person or an agent")
         step.add_argument("--note", default="")
         step.add_argument("--at", default="", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -151,7 +152,20 @@ def initiative(org: organization.Organization, args: argparse.Namespace) -> int:
 def overview(org: organization.Organization, args: argparse.Namespace) -> int:
     signals = twin.SignalLog(org.twin_dir).read()
     print(f"{org.name}: {len(signals)} signals in the twin\n")
-    print("Initiatives")
+    print("Direction")
+    for objective in org.objectives.values():
+        meta = " · ".join(x for x in (objective.priority, objective.horizon) if x)
+        print(f"  {objective.id}: {objective.statement}" + (f"  ({meta})" if meta else ""))
+        for item in org.initiatives.values():
+            if objective.id in item.objectives:
+                print(f"      ← {item.id}" + (f"  [{item.priority}]" if item.priority else ""))
+    if not org.objectives:
+        print("  no objectives declared: initiatives are not yet tied to any direction")
+    loose_initiatives = [i.id for i in org.initiatives.values() if not i.objectives]
+    if org.objectives and loose_initiatives:
+        print(f"  serving no objective: {', '.join(loose_initiatives)}")
+
+    print("\nInitiatives")
     for item in org.initiatives.values():
         count = len(twin.signals_of(org, signals, item.id))
         print(f"  {item.id:24} {item.status:8} {count:4} signals")
@@ -166,6 +180,10 @@ def overview(org: organization.Organization, args: argparse.Namespace) -> int:
         print(f"  {i.id:28} {i.initiative:20} {i.status:12} {i.provider or ('GAP' if i.status == 'gap' else '')}")
     if not open_intents:
         print("  none")
+    print("\nAuthority envelope" + ("  (default)" if org.authority is organization.DEFAULT_AUTHORITY else ""))
+    for rule in org.authority:
+        scope = " · ".join(x for x in (", ".join(rule.initiatives), ", ".join(rule.capabilities)) if x) or "everywhere"
+        print(f"  {rule.who:16} may {', '.join(rule.may):40} {scope}" + (f"   {rule.note}" if rule.note else ""))
     external = [d.id for d in org.domains.values() if d.kind == "external"]
     if external:
         print(f"\nWork observed outside autonomous domains: {', '.join(external)}")
@@ -192,6 +210,8 @@ def _print_intent(i: bizops.Intent) -> None:
     if i.draws_on:
         print("      draws on: " + ", ".join(f"{d['product']} ({d.get('relation', 'feeds')})" for d in i.draws_on))
     if i.status == "gap":
+        if i.lands_with:
+            print(f"      lands with: {i.lands_with}, once its inputs are transformed")
         print(f"      {i.rationale}")
         for option in i.options:
             mark = "→" if option.startswith(i.option + ":") and i.option else " "
@@ -208,9 +228,13 @@ def intent(org: organization.Organization, args: argparse.Namespace) -> int:
     signals = twin.SignalLog(org.twin_dir).read()
     known = bizops.intents(org, decisions.read(), signals)
     current = known.get(args.id)
-    actor = Actor(id=f"bionic:{args.by}", kind="human")
+    actor = Actor(id=f"bionic:{args.by}", kind=args.kind)
     common = {"actor": actor, "at": args.at}
     note = {"note": args.note} if args.note else {}
+
+    def authorized(action: str, initiative: str, capability: str) -> dict[str, str]:
+        rule = org.authorize(actor.id, actor.kind, action, initiative, capability)
+        return {"authority": rule.note or f"{rule.who} may {', '.join(rule.may)}"}
 
     if args.step == "state":
         bizops.check_transition(current, "stated")
@@ -226,8 +250,9 @@ def intent(org: organization.Organization, args: argparse.Namespace) -> int:
             draws_on.append({"product": product, "relation": relation or "feeds"})
         if args.product and args.product not in org.products:
             raise ContractError(f"Unknown product {args.product!r}")
+        grant = authorized("state", args.initiative, args.capability)
         decisions.record(args.id, "stated", capability=args.capability, summary=f"Intent stated: {args.outcome}",
-                         initiative=args.initiative, desired_outcome=args.outcome, product=args.product,
+                         initiative=args.initiative, **grant, desired_outcome=args.outcome, product=args.product,
                          draws_on=draws_on, priority=args.priority, deadline=args.deadline, **common, **note)
         print(f"stated {args.id}")
         return 0
@@ -241,7 +266,7 @@ def intent(org: organization.Organization, args: argparse.Namespace) -> int:
         return 0
 
     if args.step == "resolve":
-        proposal = bizops.resolve(org, signals, current)
+        proposal = bizops.resolve(org, signals, current, MANIFESTS)
         print(f"BizOps proposes: {proposal.transition}" + (f" → {proposal.provider}" if proposal.provider else ""))
         print(f"  {proposal.rationale}")
         for option in proposal.options:
@@ -250,17 +275,20 @@ def intent(org: organization.Organization, args: argparse.Namespace) -> int:
             print("\n(not recorded; run again with --accept to decide)")
             return 0
         bizops.check_transition(current, proposal.transition)
+        grant = authorized("resolve", current.initiative, current.capability)
         decisions.record(args.id, proposal.transition, capability=current.capability,
                          summary=f"Intent {proposal.transition}" + (f" → {proposal.provider}" if proposal.provider
                                                                    else ": no provider"),
                          initiative=current.initiative, provider=proposal.provider, rationale=proposal.rationale,
-                         options=proposal.options, proposed_by="bizops-rule", **common, **note)
+                         options=proposal.options, lands_with=proposal.lands_with, missing=proposal.missing,
+                         proposed_by="bizops-rule", **grant, **common, **note)
         print(f"recorded: {proposal.transition}")
         return 0
 
     transition = {"choose": "option_chosen", "handoff": "handed_off", "fulfil": "fulfilled",
                   "withdraw": "withdrawn"}[args.step]
     bizops.check_transition(current, transition)
+    grant = authorized(bizops.ACTIONS[transition], current.initiative, current.capability)
     extra = {"option": args.option} if args.step == "choose" else {}
     if args.step == "handoff":
         at = args.at or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -269,7 +297,7 @@ def intent(org: organization.Organization, args: argparse.Namespace) -> int:
                  "envelope": bizops.envelope(org, current, issued_by=actor, issued_at=at)}
     decisions.record(args.id, transition, capability=current.capability,
                      summary=f"Intent {transition.replace('_', ' ')}" + (f": {args.option}" if extra.get("option") else ""),
-                     initiative=current.initiative, **extra, **common, **note)
+                     initiative=current.initiative, **extra, **grant, **common, **note)
     print(f"recorded: {transition}")
     return 0
 

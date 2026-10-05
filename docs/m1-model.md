@@ -1,6 +1,6 @@
 # M1 — Direct
 
-> Status: implemented up to resolution; handoff and fulfilment await the book's move into KDP Studio. Builds on [m0-model.md](m0-model.md).
+> Status: implemented. Both of Singular's needs currently resolve to gaps; handoff and fulfilment are tested but not yet exercised on real data. Builds on [m0-model.md](m0-model.md).
 
 ## Purpose
 
@@ -64,9 +64,10 @@ Every decision about an intent is a signal in the contract's envelope, reported 
 
 ```text
 stated ──▶ resolved ──▶ handed off ──▶ in progress ──▶ fulfilled
-   │           │                                          
-   │           └──▶ gap ──▶ (wait · external work · adapt in M2)
-   └──▶ withdrawn            (any state may become withdrawn)
+   │           │                              │
+   │           └──▶ gap ◀──── re-resolve ─── blocked   (the provider raised a blocker)
+   │                 └──▶ (wait · external work · adapt in M2)
+   └──▶ withdrawn            (any state but fulfilled may become withdrawn)
 ```
 
 | Status | Meaning | Recorded by |
@@ -76,10 +77,11 @@ stated ──▶ resolved ──▶ handed off ──▶ in progress ──▶ f
 | `gap` | No provider exists. The resolution names the options | BizOps |
 | `handed off` | The provider received the desired outcome and constraints | BizOps |
 | `in progress` | The product's current custodian reports signals | The twin, derived |
+| `blocked` | The provider raised a blocker after the handoff and has not cleared it | The twin, derived |
 | `fulfilled` | The desired outcome was delivered | A human, in M1 |
 | `withdrawn` | The organization no longer wants it | A human |
 
-`in progress` is **derived**, never declared. If the domain is working on it, the twin sees it.
+`in progress` and `blocked` are **derived**, never declared. If the domain is working on it, or cannot go on, the twin sees it. A blocked intent may be resolved again, and may then turn out to be a gap. This is how a domain reveals, after the handoff, that a resolution was wrong.
 
 ## Resolution
 
@@ -96,6 +98,16 @@ Resolution is BizOps' first real decision.
 Case A: KDP Studio is the only declared provider, but Singular's editorial work so far was done by hand. Choosing KDP Studio means the book moves into it, which is a change of custody. This is the first decision where M0's observation changes an M1 choice.
 
 In M1, BizOps can be a deterministic rule plus a human confirming. An agent is not needed until resolution involves real judgement, such as several providers, cost or capacity. This follows the principle that concepts enter when a hypothesis needs them.
+
+### Can the provider work from the inputs?
+
+Resolution asks two questions, not one: **who provides the capability**, and **whether that provider can work from what the intent draws on**.
+
+A domain's capability manifest declares what each capability `accepts` as input, for example `book` and `text`. Each product has a `kind`. If an input's kind is not among what the chosen provider accepts, the intent is not resolved. It is a **gap of transformation**: the provider would receive the outcome (`lands_with`), but nothing turns the input into something it can use.
+
+A provider that declares no `accepts` is not read as accepting anything. Its inputs are reported as unchecked.
+
+This is a general mechanism. It names the kinds on both sides and nothing else. It was prompted by a learning case, but it does not encode that case's answer.
 
 ## Handoff
 
@@ -126,6 +138,23 @@ Case B is resolved as a gap. M1 only has to make it explicit and actionable:
 
 Choosing among these is a human decision in M1. That choice is exactly what the M2 authority envelope will later bound.
 
+## Direction and authority
+
+Two foundations sit above intents.
+
+**Objectives.** People set the direction: what the organization wants, with a priority and a horizon. Initiatives declare which objectives they serve. The overview shows objectives → initiatives → open intents, and flags initiatives that serve none. BizOps does not set objectives.
+
+**The authority envelope.** It states who may take which intent actions (`state`, `resolve`, `choose`, `handoff`, `fulfil`, `withdraw`), on which initiatives and capabilities. `who` is an actor id or a kind (`human`, `agent`). Every decision records the grant that allowed it. An action outside the envelope is refused.
+
+```yaml
+authority:
+  - {who: human, may: ["*"]}
+  - {who: bionic:planner, may: [state, resolve], capabilities: [market-relationships],
+     note: the planner may state and resolve market needs}
+```
+
+Without a declared envelope, **people may decide anything and agents nothing**. Granting an agent authority is therefore always an explicit act. This is the first concrete form of "strategy governs; autonomy operates". Budgets, limits on agent count, and the actions of M2 (creating, changing and retiring agents and capabilities) extend the same envelope later.
+
 ## Out of scope
 
 - Domains receiving intents through an interface
@@ -145,36 +174,35 @@ Choosing among these is a human decision in M1. That choice is exactly what the 
 
 ## Where it stands
 
-Both cases are stated and resolved in `examples/organization/decisions.jsonl`:
+Both cases are stated in `examples/organization/decisions.jsonl`, and both are currently gaps:
 
 ```text
-Flows
-  singular-book —adapted into→ singular-film  [observed]
-  singular-film —enriches→ singular-book      [planned]   (intent enrich-singular-book)
+enrich-singular-book  [gap]  editorial-production → singular-book
+    lands with: kdp-studio, once its inputs are transformed
+    kdp-studio provides editorial production and would receive the outcome, but it works from book, text,
+    not film. Turning singular-film into book or text for it has no provider: a missing transformation,
+    not a missing editorial production.
+      wait · external: transform outside the domains, hand kdp-studio the result · adapt: create it (M2)
 
-Intents
-  enrich-singular-book  [resolved]  editorial-production → singular-book
-      provider: kdp-studio — kdp-studio is the only active provider. Observed: this initiative's
-      editorial production so far was done by manual. Custody of singular-book moves from manual to kdp-studio.
-  launch-singular  [gap]  market-relationships
-      No active domain provides market intelligence & relationships.
-        wait · external · adapt (M2); planned provider: pulse
+launch-singular  [gap]  market-relationships
+    No active domain provides market intelligence & relationships.
+      wait · external · adapt (M2); planned provider: pulse
 ```
 
-Next, outside Bionic Company: the book moves into KDP Studio. Then the organization records the new custody and the handoff, and progress appears from KDP Studio's own signals. For the launch, the choice among wait, external and adapt is open.
+The first case was resolved to KDP Studio until resolution learned to check inputs. Its history keeps both decisions. No objectives are declared yet, and the authority envelope is the default.
 
 ```bash
 uv run bionic --org examples/organization intents
-uv run bionic --org examples/organization intent resolve launch-singular          # the proposal, not recorded
+uv run bionic --org examples/organization overview                                 # direction, gaps, authority
 uv run bionic --org examples/organization intent choose launch-singular wait --by <person>
-uv run bionic --org examples/organization intent handoff enrich-singular-book --by <person>
 ```
 
 ## Open questions
 
-0. **Does resolution need to check transformations, not only capabilities?** Case A resolved to a provider while its essential step has none ([learning case](cases/singular-book-enrichment.md)).
+0. ~~Does resolution need to check transformations, not only capabilities?~~ Yes: resolution now checks declared inputs ([learning case](cases/singular-book-enrichment.md)). Still open: whether `accepts` by kind is fine-grained enough.
 
 1. **Intent granularity.** Is "enrich the book" one intent, or several, such as structure, characters and new scenes? M1 suggests one per desired outcome, and leaves the breakdown to the domain.
 2. ~~Does the book stay one work unit after migration?~~ Resolved: it is one product, and the migration is a change of custody.
-3. **Who may state an intent?** Only humans in M1. Later, an agent within its authority. This is the first concrete use of the authority envelope.
+3. ~~Who may state an intent?~~ Whoever the authority envelope grants; by default people only.
+5. **What objectives does this organization have?** None is declared yet. They are set by people, not inferred.
 4. **Can an intent draw on a product from another initiative?** For example, *A Era dos Agentes* using material from Singular.

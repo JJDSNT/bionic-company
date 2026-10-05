@@ -54,11 +54,61 @@ class Provision:
 
 
 @dataclass(frozen=True)
+class Objective:
+    """Direction: something the organization wants, which initiatives serve. Set by people."""
+
+    id: str
+    statement: str
+    horizon: str = ""
+    priority: str = ""
+
+
+@dataclass(frozen=True)
 class Initiative:
     id: str
     name: str
     intent: str = ""
     status: str = "active"
+    objectives: tuple[str, ...] = ()
+    priority: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "objectives", tuple(self.objectives))
+
+
+INTENT_ACTIONS = ("state", "resolve", "choose", "handoff", "fulfil", "withdraw")
+
+
+@dataclass(frozen=True)
+class AuthorityRule:
+    """One grant of the authority envelope: who may take which intent actions, where.
+
+    ``who`` is an actor id (``bionic:jaime``) or a kind (``human``, ``agent``).
+    Empty ``initiatives`` or ``capabilities`` means all of them.
+    """
+
+    who: str
+    may: tuple[str, ...]
+    initiatives: tuple[str, ...] = ()
+    capabilities: tuple[str, ...] = ()
+    note: str = ""
+
+    def __post_init__(self) -> None:
+        for name in ("may", "initiatives", "capabilities"):
+            object.__setattr__(self, name, tuple(getattr(self, name)))
+        unknown = set(self.may) - set(INTENT_ACTIONS) - {"*"}
+        if unknown:
+            raise ContractError(f"Unknown authority actions {sorted(unknown)}; allowed: {list(INTENT_ACTIONS)} or *")
+
+    def allows(self, actor_id: str, actor_kind: str, action: str, initiative: str, capability: str) -> bool:
+        return (self.who in (actor_id, actor_kind)
+                and ("*" in self.may or action in self.may)
+                and (not self.initiatives or initiative in self.initiatives)
+                and (not self.capabilities or capability in self.capabilities))
+
+
+# Without a declared envelope: people may decide anything, agents nothing.
+DEFAULT_AUTHORITY = (AuthorityRule(who="human", may=("*",), note="default: people decide; agents need a grant"),)
 
 
 AFTER_RELEASE = {"frozen", "editions"}
@@ -135,7 +185,9 @@ class Organization:
     domains: dict[str, Domain] = field(default_factory=dict)
     capabilities: dict[str, Capability] = field(default_factory=dict)
     provisions: list[Provision] = field(default_factory=list)
+    objectives: dict[str, Objective] = field(default_factory=dict)
     initiatives: dict[str, Initiative] = field(default_factory=dict)
+    authority: tuple[AuthorityRule, ...] = DEFAULT_AUTHORITY
     products: dict[str, Product] = field(default_factory=dict)
     flows: list[Flow] = field(default_factory=list)
     sources: list[Source] = field(default_factory=list)
@@ -155,6 +207,16 @@ class Organization:
     def initiative_for(self, domain: str, ref: str) -> str | None:
         product = self.product_for(domain, ref)
         return product.initiative if product else None
+
+    def authorize(self, actor_id: str, actor_kind: str, action: str, initiative: str,
+                  capability: str) -> AuthorityRule:
+        """The rule that lets this actor take this action, or a refusal saying what is missing."""
+
+        for rule in self.authority:
+            if rule.allows(actor_id, actor_kind, action, initiative, capability):
+                return rule
+        raise ContractError(f"{actor_id} ({actor_kind}) may not {action} intents on {initiative} "
+                            f"for {capability}: outside the authority envelope")
 
     def providers(self, capability: str) -> list[str]:
         """Active domains that provide the capability now. A planned provider is not one yet."""
@@ -191,7 +253,9 @@ def load(root: Path) -> Organization:
         domains=_by_id(raw.get("domains"), Domain, "domain"),
         capabilities=_by_id(raw.get("capabilities"), Capability, "capability"),
         provisions=[Provision(**p) for p in raw.get("provisions") or []],
+        objectives=_by_id(raw.get("objectives"), Objective, "objective"),
         initiatives=_by_id(raw.get("initiatives"), Initiative, "initiative"),
+        authority=tuple(AuthorityRule(**r) for r in raw["authority"]) if "authority" in raw else DEFAULT_AUTHORITY,
         products=_by_id(raw.get("products"), Product, "product"),
         flows=[Flow(**f) for f in raw.get("flows") or []],
         sources=[Source(domain=s["domain"], path=root / Path(s["path"]).expanduser())
@@ -209,6 +273,17 @@ def _check_references(org: Organization) -> None:
             raise ContractError(f"Provision names unknown capability {p.capability!r}")
         if p.domain not in org.domains:
             raise ContractError(f"Provision names unknown domain {p.domain!r}")
+    for initiative in org.initiatives.values():
+        for objective in initiative.objectives:
+            if objective not in org.objectives:
+                raise ContractError(f"Initiative {initiative.id!r} serves unknown objective {objective!r}")
+    for rule in org.authority:
+        for name in rule.initiatives:
+            if name not in org.initiatives:
+                raise ContractError(f"Authority names unknown initiative {name!r}")
+        for name in rule.capabilities:
+            if name not in org.capabilities:
+                raise ContractError(f"Authority names unknown capability {name!r}")
     claimed: dict[tuple[str, str], str] = {}
     for product in org.products.values():
         if product.initiative not in org.initiatives:

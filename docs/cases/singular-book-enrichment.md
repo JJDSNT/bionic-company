@@ -1,6 +1,22 @@
 # Case: enriching the Singular book with what the film taught
 
-> Status: open learning case. Nothing here is decided. It records a gap worth learning from as it unfolds.
+> Status: open learning case, and **the answer key of a blind test**. Nothing here is decided.
+>
+> The author chose not to declare the missing capability. The test is whether Bionic Company can **discover** the need, **build** the capability and **use** it by itself. This document is development knowledge: it must never become part of what Bionic Company reasons over (organization records, decisions, signals, manifests, or any agent's context). See [Development knowledge is not organizational knowledge](../m0-model.md#development-knowledge-is-not-organizational-knowledge).
+
+## Success criteria (set before the test)
+
+Each stage counts on its own. Discovering without building is already a result.
+
+| # | Stage | Passes when |
+|---|---|---|
+| 1 | **Discover** | From evidence, with no such capability declared, Bionic Company identifies that a transformation is missing between the film and the book |
+| 2 | **Name** | It proposes a capability *between* domains, instead of folding it into KDP Studio or Cine Toaster |
+| 3 | **Build** | Within its authority, it creates the capability (M2) |
+| 4 | **Use** | The capability yields candidate versions that land in the book, and the author decides what to adopt |
+| 5 | **Recognise** | The twin records where the capability emerged and can reuse it, e.g. for an adaptation in the other direction |
+
+Results are recorded at the end of this document as they happen.
 
 ## The scenario
 
@@ -58,6 +74,22 @@ In every shape, the author decides what enters the book. That is a constraint an
 2. **A resolved intent can turn out to be a gap.** The lifecycle has no path from `resolved` back to `gap` triggered by the provider. A domain raising a blocker on a handed-off intent may be that path.
 3. **Some capabilities belong between domains.** If cross-media adaptation becomes a capability, it is the first one no current domain would naturally own. It is a candidate for organizational adaptation (M2) rather than for an existing domain.
 4. **Granularity is discovered, not designed.** The capability map stays coarse until a real case like this one shows where it is too coarse.
+
+## Results
+
+### Stage 1, Discover: passed, with a caveat (2026-10-05)
+
+Resolution gained a general check: whether the chosen provider can work from the intent's inputs. KDP Studio's manifest declares that editorial production works from `book` and `text`. The intent draws on the film. Re-resolved, the intent became a gap of transformation:
+
+> kdp-studio provides editorial production and would receive the outcome, but it works from book, text, not film. Turning singular-film into book or text for it has no provider: a missing transformation, not a missing editorial production.
+
+No capability was declared, and the mechanism names only kinds. **Caveat:** the mechanism was designed by people who knew this case. It is general, but it is not an independent discovery. A stronger test is a later case of the same shape that nobody anticipated.
+
+### Stage 2, Name: partial
+
+The resolution describes the need as a transformation *between* a provider and its input ("turns film into book or text"), and does not fold it into KDP Studio or Cine Toaster. It does not yet propose a capability with an identity, a place or an owner. That belongs to M2.
+
+### Stages 3–5: not started
 
 ## Related
 

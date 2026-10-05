@@ -278,7 +278,7 @@ The README intentionally stays focused on what the project is, why it exists and
 | Stage | State |
 |---|---|
 | M0 — Observe | Implemented. The twin observes KDP Studio and Cine Toaster through read-only adapters, plus work done outside any domain, and reconstructs *A Era dos Agentes* and *Singular* |
-| M1 — Direct | Implemented up to resolution. *Singular*'s two needs are stated: enriching the book resolves to KDP Studio; the launch is a gap |
+| M1 — Direct | Implemented: objectives, an authority envelope, intents, resolution that checks a provider's inputs. *Singular*'s two needs are both gaps: enriching the book lacks a film-to-book transformation; the launch lacks a provider |
 | M2 — Adapt | Not started |
 | M3 — Learn & Simulate | Not started |
 

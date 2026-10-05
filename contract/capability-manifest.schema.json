@@ -18,7 +18,11 @@
         "type": "object", "required": ["capability"], "additionalProperties": false,
         "properties": {
           "capability": { "type": "string", "minLength": 1 },
-          "outcomes": { "type": "array", "items": { "type": "string" } }
+          "outcomes": { "type": "array", "items": { "type": "string" } },
+          "accepts": {
+            "type": "array", "items": { "type": "string" },
+            "description": "Kinds of input the capability can work from (book, text, film...). Absent: not declared, so unknown; it is never read as 'anything'."
+          }
         }
       }
     },
