@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from .contract import ORGANIZATION_DOMAIN, Actor, ContractError, Signal
+from .contract import CONTRACT_VERSION, ORGANIZATION_DOMAIN, Actor, ContractError, Signal
 from .organization import Organization
 
 DECISIONS_FILENAME = "decisions.jsonl"
@@ -208,6 +208,44 @@ def check_transition(intent: Intent | None, transition: str) -> None:
         raise ContractError("No such intent")
     if intent.status not in TRANSITIONS[transition]:
         raise ContractError(f"Intent {intent.id} is {intent.status}; it cannot become {transition}")
+
+
+def envelope(org: Organization, intent: Intent, *, issued_by: Actor, issued_at: str) -> dict[str, Any]:
+    """What crosses the boundary to the provider (contract/intent.schema.json).
+
+    The desired outcome, where it lands in the provider's own terms, and where
+    its inputs are held now. Not the initiative, not the organization's product
+    ids, not how to do it.
+    """
+
+    if not intent.provider:
+        raise ContractError(f"Intent {intent.id} has no provider to hand off to")
+    out: dict[str, Any] = {
+        "id": intent.id,
+        "contract_version": CONTRACT_VERSION,
+        "capability": intent.capability,
+        "desired_outcome": intent.desired_outcome,
+        "issued_at": issued_at,
+        "issued_by": {"id": issued_by.id, "kind": issued_by.kind},
+    }
+    product = org.products.get(intent.product) if intent.product else None
+    if product:
+        here = next((c for c in reversed(product.custody) if c.domain == intent.provider), None)
+        if here:
+            out["work_unit_ref"] = here.ref
+    inputs = []
+    for item in intent.draws_on:
+        source = org.products[item["product"]]
+        entry = {"name": source.name, "relation": item.get("relation", "feeds")}
+        if source.custodian:
+            entry.update(held_by=source.custodian.domain, ref=source.custodian.ref)
+        inputs.append(entry)
+    if inputs:
+        out["inputs"] = inputs
+    for key in ("priority", "deadline"):
+        if getattr(intent, key):
+            out[key] = getattr(intent, key)
+    return out
 
 
 def flows(org: Organization, all_intents: Iterable[Intent]) -> list[dict[str, str]]:

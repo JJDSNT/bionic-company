@@ -242,7 +242,7 @@ Human Direction / Organizational Context
        Decision / Adaptation
 ```
 
-The existing prototype code is intentionally preserved while this transition is implemented incrementally.
+The original prototype is preserved in [`legacy/agentos/`](legacy/agentos/). Nothing in the current implementation depends on it.
 
 ## Technology
 
@@ -261,15 +261,35 @@ No framework or protocol defines the project. Technology choices should follow t
 
 ## Architecture notes
 
-The evolving working theory is documented in:
+| Document | What it holds |
+|---|---|
+| [docs/organizational-model.md](docs/organizational-model.md) | The working theory: boundaries, principles, open questions |
+| [docs/m0-model.md](docs/m0-model.md) | M0 — Observe: entities, the contract, the twin, cross-domain validation |
+| [docs/m1-model.md](docs/m1-model.md) | M1 — Direct: intents, resolution, handoff, fulfilment |
+| [contract/](contract/) | The organizational contract as language-neutral JSON Schema |
 
-**[docs/organizational-model.md](docs/organizational-model.md)**
-
-That document contains the more detailed architectural discussion, boundaries and open questions. The README intentionally stays focused on what the project is, why it exists and how the current validation environment relates to the broader idea.
+The README intentionally stays focused on what the project is, why it exists and how the current validation environment relates to the broader idea.
 
 ## Status
 
 **Experimental / early architectural validation.**
+
+| Stage | State |
+|---|---|
+| M0 — Observe | Implemented. The twin observes KDP Studio and Cine Toaster through read-only adapters, plus work done outside any domain, and reconstructs *A Era dos Agentes* and *Singular* |
+| M1 — Direct | Implemented up to resolution. *Singular*'s two needs are stated: enriching the book resolves to KDP Studio; the launch is a gap |
+| M2 — Adapt | Not started |
+| M3 — Learn & Simulate | Not started |
+
+```bash
+uv sync
+uv run bionic --org examples/organization ingest        # read the domains' records into the twin
+uv run bionic --org examples/organization overview      # initiatives, capability gaps, open intents
+uv run bionic --org examples/organization initiative singular
+uv run pytest
+```
+
+`examples/organization/` holds this ecosystem's data. Another organization writes its own and runs the same code.
 
 Bionic Company is not presented as a finished reference architecture. Its purpose is to turn ideas about bionic organizations into executable experiments, learn from real initiatives and progressively discover which abstractions are actually useful.
 

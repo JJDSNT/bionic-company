@@ -99,7 +99,7 @@ In M1, BizOps can be a deterministic rule plus a human confirming. An agent is n
 
 Today no domain accepts intents through an interface. M1 does not require one.
 
-- **What crosses the boundary:** the desired outcome, the constraints, and references to the inputs (`draws_on`). This is the intent envelope from M0.
+- **What crosses the boundary:** the desired outcome, the constraints, and references to the inputs (`draws_on`), each located by the domain that holds it now. This is the intent envelope (`contract/intent.schema.json`). `bionic intent envelope <id>` shows it, and the handoff records it.
 - **What does not cross:** the initiative's internals, other domains' details, or how to do the work.
 - **How it crosses, in M1:** by hand. A person carries the intent to the domain, for example by migrating the Singular book into KDP Studio with the desired outcome as the book's intention. Bionic Company records the handoff and the book's new custody.
 - **Later:** a domain may accept intents directly, over any transport. The envelope does not change.

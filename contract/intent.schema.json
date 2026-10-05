@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JJDSNT/bionic-company/contract/intent.schema.json",
+  "title": "Intent envelope",
+  "description": "What the organization hands a domain: a desired outcome and its constraints, never how to achieve it, and nothing of the initiative's internals. Contract version 0.1.",
+  "type": "object",
+  "required": ["id", "contract_version", "capability", "desired_outcome", "issued_at", "issued_by"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "description": "Lets the domain cite the intent in its signals, if it wants to." },
+    "contract_version": { "const": "0.1" },
+    "capability": { "type": "string", "minLength": 1 },
+    "desired_outcome": { "type": "string", "minLength": 1 },
+    "work_unit_ref": {
+      "type": "string",
+      "description": "The receiving domain's own reference for where the outcome lands, when the work is already in its custody."
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Results the outcome should build on, located by whoever holds them now.",
+      "items": {
+        "type": "object", "required": ["name"], "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "relation": { "type": "string" },
+          "held_by": { "type": "string", "description": "The domain holding it now." },
+          "ref": { "type": "string", "description": "That domain's own reference for it." }
+        }
+      }
+    },
+    "priority": { "type": "string" },
+    "deadline": { "type": "string" },
+    "constraints": { "type": "object" },
+    "issued_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
+    "issued_by": { "$ref": "signal.schema.json#/$defs/actor" }
+  }
+}

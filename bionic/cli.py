@@ -7,6 +7,7 @@
     bionic intent state <id> ...   state a need on an initiative
     bionic intent resolve <id>     BizOps proposes a provider or a gap; --accept records it
     bionic intent choose <id> <option>       for a gap: wait, external or adapt
+    bionic intent envelope <id>    what a handoff would send the provider
     bionic intent handoff|fulfil|withdraw <id>
     bionic intents                 every intent and its status
 
@@ -16,8 +17,10 @@ The organization directory is ``--org`` or ``$BIONIC_ORG`` (default: current dir
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import bizops, organization, twin
@@ -52,9 +55,10 @@ def main(argv: list[str] | None = None) -> int:
     choose = steps.add_parser("choose")
     choose.add_argument("id")
     choose.add_argument("option", choices=bizops.GAP_OPTIONS)
-    for name in ("handoff", "fulfil", "withdraw"):
+    for name in ("handoff", "fulfil", "withdraw", "envelope"):
         steps.add_parser(name).add_argument("id")
-    for step in (stated, resolve_parser, choose, *(steps.choices[n] for n in ("handoff", "fulfil", "withdraw"))):
+    for step in (stated, resolve_parser, choose,
+                 *(steps.choices[n] for n in ("handoff", "fulfil", "withdraw", "envelope"))):
         step.add_argument("--by", default=os.environ.get("USER", "unknown"), help="who decides (a person)")
         step.add_argument("--note", default="")
         step.add_argument("--at", default="", help=argparse.SUPPRESS)
@@ -231,6 +235,11 @@ def intent(org: organization.Organization, args: argparse.Namespace) -> int:
     if current is None:
         raise ContractError(f"No intent {args.id!r}")
 
+    if args.step == "envelope":
+        at = args.at or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        print(json.dumps(bizops.envelope(org, current, issued_by=actor, issued_at=at), indent=2, ensure_ascii=False))
+        return 0
+
     if args.step == "resolve":
         proposal = bizops.resolve(org, signals, current)
         print(f"BizOps proposes: {proposal.transition}" + (f" → {proposal.provider}" if proposal.provider else ""))
@@ -254,8 +263,10 @@ def intent(org: organization.Organization, args: argparse.Namespace) -> int:
     bizops.check_transition(current, transition)
     extra = {"option": args.option} if args.step == "choose" else {}
     if args.step == "handoff":
-        extra = {"provider": current.provider, "desired_outcome": current.desired_outcome,
-                 "product": current.product}
+        at = args.at or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        common["at"] = at
+        extra = {"provider": current.provider, "product": current.product,
+                 "envelope": bizops.envelope(org, current, issued_by=actor, issued_at=at)}
     decisions.record(args.id, transition, capability=current.capability,
                      summary=f"Intent {transition.replace('_', ' ')}" + (f": {args.option}" if extra.get("option") else ""),
                      initiative=current.initiative, **extra, **common, **note)

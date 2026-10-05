@@ -24,7 +24,7 @@ The ecosystem stays coherent through a shared contract, not a shared technology 
 | **2. Recommended patterns** | The ecosystem | Optional | Durable records as truth, gates as records, explicit actor, append-only history |
 | **3. Domain internals** | Each domain | Free | Language, storage, agents, workflows, models, tools, UI |
 
-The contract is described in JSON Schema and is transport-neutral: a domain may deliver it over HTTP, events, MCP, files or a manual entry. It assumes no particular language, framework or storage.
+The contract is published as JSON Schema in [`contract/`](../contract/) and is transport-neutral: a domain may deliver it over HTTP, events, MCP, files or a manual entry. It assumes no particular language, framework or storage.
 
 ## Entities
 
@@ -229,20 +229,28 @@ The vocabulary grows only when an initiative needs a fact the existing types can
 
 ### Intent envelope
 
-Organization to domain. **Defined in M0, not sent until M1.** It is defined now only to keep it symmetrical with signals.
+Organization to domain. Used from M1 on, at handoff ([m1-model.md](m1-model.md)).
 
 ```json
 {
-  "id": "bionic:int_…",
-  "initiative_id": "singular",
-  "capability": "market-relationships",
-  "desired_outcome": "Launch campaign for the Singular trailer",
-  "priority": "high",
-  "deadline": "2026-12-01",
-  "constraints": { "budget": { "amount": 200, "currency": "USD" } },
-  "actor": { "id": "bionic:jaime", "kind": "human" }
+  "id": "enrich-singular-book",
+  "contract_version": "0.1",
+  "capability": "editorial-production",
+  "desired_outcome": "Revisit the book with what the screenplay and the film taught, before its release",
+  "work_unit_ref": "singular",
+  "inputs": [
+    { "name": "Singular (film)", "relation": "enriches", "held_by": "cine-toaster", "ref": "singular" }
+  ],
+  "issued_at": "2026-10-05T12:00:00Z",
+  "issued_by": { "id": "bionic:jaime", "kind": "human" }
 }
 ```
+
+The envelope carries the desired outcome, where it lands in the provider's own terms, and where its inputs are held now. It does not carry the initiative, the organization's product ids, or how to do the work.
+
+### Published schemas
+
+The three envelopes are published as JSON Schema in [`contract/`](../contract/). The `bionic` package is one implementation, and its tests validate everything it produces against them.
 
 ## The twin in M0
 

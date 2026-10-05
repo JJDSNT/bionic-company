@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JJDSNT/bionic-company/contract/signal.schema.json",
+  "title": "Signal",
+  "description": "Something that already happened, reported by a domain (or by the organization itself, as domain 'bionic'). Contract version 0.1.",
+  "type": "object",
+  "required": ["id", "type", "occurred_at", "domain_id", "work_unit_ref", "actor", "capability", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string", "minLength": 1,
+      "description": "Globally unique and stable: re-reporting the same signal must give the same id."
+    },
+    "type": {
+      "enum": ["work.started", "decision.recorded", "gate.opened", "gate.decided", "version.recorded",
+               "cost.incurred", "outcome.delivered", "blocker.raised", "blocker.cleared"]
+    },
+    "occurred_at": {
+      "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "When it happened, in UTC, to the second."
+    },
+    "domain_id": { "type": "string", "minLength": 1, "description": "Who reports it." },
+    "work_unit_ref": {
+      "type": "string", "minLength": 1,
+      "description": "The reporting domain's own reference for the work. The organization maps it to a product."
+    },
+    "actor": { "$ref": "#/$defs/actor" },
+    "capability": { "type": "string", "minLength": 1, "description": "The business capability exercised." },
+    "summary": { "type": "string" },
+    "data": {
+      "type": "object",
+      "description": "Domain-specific detail. Stored, never interpreted by the organization."
+    },
+    "cost": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object", "required": ["amount", "currency"], "additionalProperties": false,
+          "properties": {
+            "amount": { "type": "number", "minimum": 0 },
+            "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+            "kind": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "source": {
+      "type": "object", "additionalProperties": { "type": "string" },
+      "description": "Where the domain's own record of this fact lives: kind and ref."
+    }
+  },
+  "$defs": {
+    "actor": {
+      "type": "object", "required": ["id", "kind"], "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Scoped to the domain that vouches for it." },
+        "kind": { "enum": ["human", "agent", "system"] }
+      }
+    }
+  }
+}
