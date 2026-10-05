@@ -1,139 +1,176 @@
-# AgentOS – Sistema Operacional de Agentes para Transformação Digital
+# Bionic Company
 
-**AgentOS** é uma plataforma experimental que integra agentes inteligentes, fluxos orquestrados e comunicação entre múltiplos sistemas para simular o funcionamento de uma organização biónica em ambientes de transformação digital.
+**An experimental environment for representing, understanding and directing an agentic organization.**
 
----
+Bionic Company is evolving from the original **AgentOS** experiment into an organizational layer that connects strategy with autonomous business domains.
 
-## 🎯 Objetivo
+The current working hypothesis is:
 
-Capacitar indivíduos e organizações a:
-- Diagnosticar seu estado digital,
-- Planejar ações com base em contextos dinâmicos,
-- Executar tarefas via agentes automatizados,
-- Simular cenários futuros com apoio de IA,
-usando uma arquitetura modular baseada em agentes e protocolos.
+> **Bionic Company = Agentic BizOps + Organizational Twin.**
 
----
+It should know what the organization can do, what it wants to achieve, what is happening across its domains, and how well it is performing — **without needing to know how each domain performs its internal work**.
 
-## 🧠 Arquitetura Conceitual
+> This repository is currently being reoriented. The existing planner/executor implementation is preserved as an early prototype and should not be read as the final architecture.
 
-Este projeto se apoia na convergência de quatro tecnologias fundamentais:
+## The organizational model
 
-| Componente | Função Principal |
-|-----------|------------------|
-| **LangChain** | Criação de agentes LLM com ferramentas e memória |
-| **LangGraph** | Orquestração do fluxo de decisão entre agentes |
-| **MCP (Model Context Protocol)** | Padronização do estado e contexto para interoperabilidade |
-| **A2A (Agent-to-Agent Protocol)** | Comunicação segura e semântica entre agentes internos e externos |
-
----
-
-## 📦 Casos de Uso
-
-- Consultoria automatizada para pequenas empresas (ex: plano digital, chatbot, campanhas)
-- Orquestração de tarefas administrativas via IA
-- Simulação de transformações organizacionais com múltiplos agentes
-- Autonomia de decisão baseada em contexto
-
----
-
-## 🔧 Estrutura Inicial do Projeto
-
-```bash
-agentos/
-├── digitalops/                    # Camada de operações digitais (mock ou real)
-│   ├── mock.py                    # Mock de chamadas operacionais (ativar serviço, monitorar evento, etc.)
-│   ├── state.py                   # Armazena/atualiza estado operacional dos serviços
-│   ├── gateway.py                 # Interface (façade) para o resto do sistema
-│   └── log.py                     # Logging de eventos operacionais simulados
-├── agents/                         # Agentes LangChain
-│   ├── planner_agent.py
-│   ├── executor_agent.py
-├── langgraph/                      # Fluxos de controle e decisão
-│   └── digital_plan_graph.py
-├── context/                        # Schemas e exemplos de MCP
-│   └── mcp_schema.json
-├── a2a/                            # Integração com protocolos externos
-│   └── communicator.py
-├── twins/                          # Digital Twins / Digital Shadows
-│   ├── blueprints/                 # Definições estáticas (ex: DTDL, YAML, JSON)
-│   │   ├── chatbot_service.json
-│   ├── shadows/                    # Estados dinâmicos em tempo real (espelhos)
-│   │   ├── loja_conforto.shadow.json
-│   └── schema.py                   # DTOs e validadores em Python (opcional)
-├── simulation/                     # Simulações e análise de impacto
-│   ├── scenarios/                  # Casos simulados (entradas)
-│   │   ├── default.json
-│   ├── models/                     # Modelos exportados (ex: AnyLogic, mesa)
-│   │   ├── AgentOSSim.xlpx         # Ex: projeto AnyLogic
-│   ├── bridge.py                   # Código para integração (Python ↔ AnyLogic/mesa)
-│   ├── runner.py                   # Executor de simulações (por CLI, API ou teste)
-│   └── metrics.py                  # Coleta e análise de KPIs simulados
-├── models/                         # DTOs reutilizáveis em LangGraph, AGUI, Twins, API
-│   ├── base.py                     # BaseDTO (Pydantic root)
-│   ├── plano.py                    # PlanoDTO, EtapaDTO
-│   ├── acao.py                     # AcaoDTO, ResultadoExecucaoDTO
-│   ├── twin.py                     # TwinStateDTO, BlueprintDTO
-│   └── agui.py                     # Estruturas de entrada/saída do AG-UI
-├── app/
-│   ├── api.py                      # FastAPI principal
-│   ├── agui/                       # Integração com AG-UI Protocol
-│   │   ├── handler.py              # Eventos e lógica AG-UI
-│   │   └── schema.py               # (Opcional) Schemas e tipos customizados AG-UI
-│   └── ui/                         # Interface frontend (React, Angular etc.)
-│       └── dashboard.tsx
-├── main.py                         # Execução sequencial manual
-├── check_ollama.py                 # Verificação do servidor LLM
-├── .env                            # Variáveis de ambiente
-├── README.md
-└── requirements.txt
-
+```text
+                         BIONIC COMPANY
+                    Agentic BizOps + Twin
+                              │
+              Strategy / Objectives / State
+                              │
+             Outcomes / Constraints / Signals
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+          KDP Studio      Cine Toaster       Pulse
+           Editorial       Audiovisual      Market &
+                                          Relationships
 ```
 
----
+The three operating domains remain autonomous applications. Bionic Company coordinates at the organizational level rather than absorbing their internal agents and workflows.
 
-## 🚀 Roadmap
+### KDP Studio
 
-### Fase 1 – MVP
-- [x] Criar fluxo LangGraph com dois agentes (planejamento e execução)
-- [x] Padronizar o contexto via MCP (versão inicial)
-- [ ] Expor o sistema via FastAPI
-- [ ] Criar UI mínima para entrada de objetivos
+Editorial production. Bionic Company may request an editorial outcome; KDP Studio owns how that outcome is produced.
 
-### Fase 2 – Extensões
-- [ ] A2A: Comunicação com agentes externos via protocolo (ex: Gemini, Zapier, CRM)
-- [ ] Simulação de decisões e branching via LangGraph
-- [ ] Dashboard com histórico de execuções
+### Cine Toaster
 
-### Fase 3 – Plataforma Aberta
-- [ ] Permitir que usuários definam seus próprios fluxos
-- [ ] Editor visual baseado em grafo
-- [ ] Exportação e reexecução de planos simulados
+Audiovisual production. Bionic Company may request an audiovisual outcome; Cine Toaster owns its production workflow.
 
----
+### Pulse
 
-## 💡 Visão de Futuro
+Market intelligence, audiences, relationships, communication, communities and reputation. Pulse represents an important interface between the organization and its external environment.
 
-O **AgentOS** visa evoluir como uma *infraestrutura modular de agentes*, onde:
-- Fluxos podem ser descritos como grafos vivos,
-- Agentes compartilham contexto em tempo real,
-- Protocolos como MCP e A2A garantem interoperabilidade,
-- Organizações digitais podem ser simuladas e geridas como ecossistemas adaptativos.
+## Agentic BizOps
 
----
+BizOps is the bridge between strategy and operation.
 
-## 📚 Referências
+Bionic Company may work with:
+- strategy and objectives;
+- initiatives and desired outcomes;
+- priorities;
+- policies and constraints;
+- resources and budgets;
+- cross-domain coordination;
+- risks;
+- organizational performance.
 
-- [LangChain](https://docs.langchain.com/)
-- [LangGraph](https://docs.langchain.com/langgraph/)
-- [MCP – Model Context Protocol (Google)](https://github.com/google/model-context-protocol)
-- [A2A – Agent-to-Agent Protocol](https://github.com/google/agent-protocol)
-- [AG-UI](https://github.com/ag-ui-protocol/ag-ui)
+It should not prescribe prompts, tools, models, task graphs or production steps inside a domain.
 
----
+```text
+Strategy
+   ↓
+Objectives
+   ↓
+Initiatives
+   ↓
+Outcomes + Constraints
+   ↓
+Domain Execution
+   ↓
+Results + Cost + Risk + Metrics
+   ↓
+Organizational Understanding
+   ↺
+```
 
-## 🧑‍💻 Autor
+## Organizational Twin
 
-Jaime José Dias da Silva Neto  
-Engenheiro de Software | Especialista em Transformação Digital  
-LinkedIn: [linkedin.com/in/jdiasneto](https://www.linkedin.com/in/jdiasneto)
+The Organizational Twin is intended to become a living representation of the company.
+
+It may show domains, business capabilities, initiatives, resources, agents, dependencies, financial/performance state and relevant external signals.
+
+Agents from KDP Studio, Cine Toaster and Pulse may be visible in the twin for organizational understanding. Visibility does **not** imply that Bionic Company directly controls their operational work.
+
+## Architectural boundary
+
+Bionic Company deals primarily in **organizational intent and organizational results**.
+
+A domain may receive an objective, desired outcome, priority, deadline, policy or resource envelope. It may return status, progress, results, cost, risks, forecasts and relevant KPIs.
+
+Task decomposition, agent routing, prompts, tools, providers and production workflows remain inside the domain.
+
+> **Sharing infrastructure does not imply sharing domain responsibility.**
+
+## Technology
+
+The original AgentOS prototype explored:
+- LangChain;
+- LangGraph;
+- Ollama;
+- FastAPI;
+- AG-UI;
+- MCP;
+- A2A;
+- digital twins;
+- simulation.
+
+These technologies remain candidates, but they are now subordinate to the organizational architecture. The product is not defined by a specific agent framework or protocol.
+
+## Current prototype
+
+The code currently implements an early experimental flow:
+
+```text
+Goal → Planner Agent → First Action → Executor Agent
+```
+
+The planner creates a digital-transformation plan and the executor describes how an action could be performed. This code is being kept as historical/prototyping material while the new architecture is defined.
+
+Current implementation areas include:
+
+```text
+agents/
+  planner_agent.py
+  executor_agent.py
+
+langgraph/
+  digital_plan_graph.py
+
+app/
+  api.py
+  agui/
+
+main.py
+```
+
+Do not interpret this flow as the target operating model of Bionic Company.
+
+## Architectural draft
+
+The first working theory is documented in:
+
+**[docs/organizational-model.md](docs/organizational-model.md)**
+
+It describes:
+- Agentic BizOps;
+- the Organizational Twin;
+- autonomous business domains;
+- the strategy-to-operation boundary;
+- coarse business capabilities;
+- finance and organizational performance as an open design area;
+- interoperability;
+- open architectural questions.
+
+## Near-term direction
+
+The immediate goal is not to add more agents. It is to establish the smallest useful organizational model and validate it against real cross-domain scenarios involving KDP Studio, Cine Toaster and Pulse.
+
+Likely next steps are:
+1. define minimal organizational entities and contracts;
+2. model the three real domains in the twin;
+3. define intent/result exchanges between Bionic Company and domains;
+4. revisit the planner/executor prototype against those contracts;
+5. let real organizational use cases drive additional capabilities.
+
+## Status
+
+**Early architectural reorientation / working theory.**
+
+The project intentionally keeps several questions open, including finance, tactical boundaries, organizational KPIs, agent visibility, event contracts and simulation.
+
+## Author
+
+Jaime José Dias da Silva Neto
