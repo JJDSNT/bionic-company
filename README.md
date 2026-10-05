@@ -6,7 +6,7 @@ Bionic Company is evolving from the original **AgentOS** experiment into an orga
 
 The current working hypothesis is:
 
-> **Bionic Company = Agentic BizOps + Organizational Twin.**
+> **Bionic Company = Agentic BizOps + Organizational Twin + Organizational Adaptation.**
 
 It should know what the organization can do, what it wants to achieve, what is happening across its domains, and how well it is performing — **without needing to know how each domain performs its internal work**.
 
@@ -16,7 +16,7 @@ It should know what the organization can do, what it wants to achieve, what is h
 
 ```text
                          BIONIC COMPANY
-                    Agentic BizOps + Twin
+              BizOps + Twin + Adaptation
                               │
               Strategy / Objectives / State
                               │
@@ -84,6 +84,23 @@ It may show domains, business capabilities, initiatives, resources, agents, depe
 
 Agents from KDP Studio, Cine Toaster and Pulse may be visible in the twin for organizational understanding. Visibility does **not** imply that Bionic Company directly controls their operational work.
 
+## Organizational Adaptation
+
+Bionic Company is intended to be more than a static set of predefined agents. The organization should be able to identify capability gaps, adapt its agentic workforce and sustain the platform that enables it.
+
+Two mechanisms are currently distinguished:
+
+- **Meta-Agent / Agent Workforce** — concerned with creating, configuring, evaluating, adapting and retiring organizational agents when new capabilities are needed.
+- **Development / DevOps / SRE** — concerned with maintaining and evolving the Bionic Company platform itself: code, releases, infrastructure, observability, reliability and incidents.
+
+These are related but different forms of evolution. The Meta-Agent changes the organization's agentic capacity; Dev/DevOps/SRE sustain the technical system on which that capacity runs.
+
+Operating domains may have their **own** equivalent mechanisms. For example, a Cine Toaster SRE agent belongs to Cine Toaster and understands its infrastructure and production environment. Bionic Company may observe organizational signals such as reliability, cost or capability gaps without micromanaging how the domain responds.
+
+> **Self-maintaining domains; self-evolving organization.**
+
+This adaptation is expected to be governed. Agent creation or removal does not imply unrestricted autonomous self-modification; human approval, policies, security and cost constraints may apply.
+
 ## Architectural boundary
 
 Bionic Company deals primarily in **organizational intent and organizational results**.
@@ -147,6 +164,9 @@ The first working theory is documented in:
 It describes:
 - Agentic BizOps;
 - the Organizational Twin;
+- organizational adaptation and the Agent Workforce;
+- Meta-Agent, Development, DevOps and SRE responsibilities;
+- recursive domain autonomy;
 - autonomous business domains;
 - the strategy-to-operation boundary;
 - coarse business capabilities;
@@ -163,7 +183,8 @@ Likely next steps are:
 2. model the three real domains in the twin;
 3. define intent/result exchanges between Bionic Company and domains;
 4. revisit the planner/executor prototype against those contracts;
-5. let real organizational use cases drive additional capabilities.
+5. model organizational capability gaps and governed adaptation;
+6. let real organizational use cases drive additional capabilities.
 
 ## Status
 
