@@ -33,6 +33,8 @@ singular-book ──adapted into──▶ singular-film
             The book's custody moves from manual work to KDP Studio; it stays the same product.
 ```
 
+> **Case A hides a gap.** It resolves to KDP Studio because the book lands there, but no domain yet provides the step in the middle: turning the film's learnings into changes in the book. This is recorded as a learning case in [cases/singular-book-enrichment.md](cases/singular-book-enrichment.md).
+
 Because Singular is fiction, a released version never changes. The enrichment must therefore land in a version **before** the book's release, and it can, since the book is not released yet.
 
 ## Intent
@@ -169,6 +171,8 @@ uv run bionic --org examples/organization intent handoff enrich-singular-book --
 ```
 
 ## Open questions
+
+0. **Does resolution need to check transformations, not only capabilities?** Case A resolved to a provider while its essential step has none ([learning case](cases/singular-book-enrichment.md)).
 
 1. **Intent granularity.** Is "enrich the book" one intent, or several, such as structure, characters and new scenes? M1 suggests one per desired outcome, and leaves the breakdown to the domain.
 2. ~~Does the book stay one work unit after migration?~~ Resolved: it is one product, and the migration is a change of custody.
