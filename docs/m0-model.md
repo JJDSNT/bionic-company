@@ -328,6 +328,20 @@ M0 is complete when, for **Singular** and **A Era dos Agentes**, the twin can an
 
 And: rebuilding all projections from the log gives the same answers.
 
+## Running it
+
+The `bionic/` package implements the contract, the twin log and the KDP Studio adapter. The legacy AgentOS prototype is untouched.
+
+```bash
+uv sync
+uv run bionic --org examples/organization ingest                  # read sources, append new signals
+uv run bionic --org examples/organization overview                # initiatives, gaps, unclaimed work
+uv run bionic --org examples/organization initiative a-era-dos-agentes
+uv run pytest
+```
+
+`examples/organization/organization.yaml` is this ecosystem's data. Another organization writes its own and runs the same code. The twin log, `twin/signals.jsonl`, is local and not versioned.
+
 ## Open decisions
 
 1. **Where the twin's log lives.** A JSONL file in an organization directory, consistent with the domains, or a database. A file is the M0 default.

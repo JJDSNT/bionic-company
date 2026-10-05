@@ -48,3 +48,7 @@ app/ui/.env.*
 
 # Checkpoints Jupyter
 .ipynb_checkpoints/
+
+# Bionic Company twin data produced by local runs
+examples/organization/twin/
+.venv/

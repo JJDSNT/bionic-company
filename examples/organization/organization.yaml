@@ -1,0 +1,42 @@
+# The organization Bionic Company is being validated with (docs/m0-model.md).
+# This file is data: another organization writes its own and uses the same code.
+
+organization:
+  id: jjdsnt
+  name: Jaime Dias — creative ecosystem
+
+domains:
+  - {id: kdp-studio,   name: KDP Studio,   status: active}
+  - {id: cine-toaster, name: Cine Toaster, status: active}
+  - {id: pulse,        name: Pulse,        status: planned}
+
+capabilities:
+  - id: editorial-production
+    name: Editorial production
+    description: Research, write, revise, typeset and publish books.
+  - id: audiovisual-production
+    name: Audiovisual production
+    description: Make films, trailers and other audiovisual work.
+  - id: market-relationships
+    name: Market intelligence & relationships
+    description: Audiences, communities, communication, PR and reputation.
+
+provisions:
+  - {capability: editorial-production,   domain: kdp-studio}
+  - {capability: audiovisual-production, domain: cine-toaster}
+  # market-relationships has no provider until Pulse exists: a capability gap.
+
+initiatives:
+  - id: a-era-dos-agentes
+    name: A Era dos Agentes
+    intent: A practical introduction to agentic AI, in Brazilian Portuguese, with an English edition to come.
+  - id: singular
+    name: Singular
+    intent: A creative work moving between audiovisual, editorial and market-facing activity.
+
+bindings:
+  - {initiative: a-era-dos-agentes, domain: kdp-studio, work_unit_ref: a-era-dos-agentes}
+
+# Where adapters read each domain's work units. Local to this machine.
+sources:
+  - {domain: kdp-studio, path: ~/books/a-era-dos-agentes}
