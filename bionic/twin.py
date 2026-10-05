@@ -64,6 +64,7 @@ class InitiativeView:
     decisions: list[Signal]
     open_gates: list[Signal]
     cost: dict[str, float]
+    unpriced: dict[str, float]
     signal_count: int
 
 
@@ -80,6 +81,7 @@ def initiative_view(org: Organization, signals: Iterable[Signal], initiative: st
     by_pair: dict[tuple[str, str], Participation] = {}
     total: dict[str, float] = defaultdict(float)
     gates: dict[str, Signal] = {}
+    unpriced = {"count": 0, "seconds": 0.0}
     for s in mine:
         key = (s.domain_id, s.capability)
         p = by_pair.get(key)
@@ -90,6 +92,10 @@ def initiative_view(org: Organization, signals: Iterable[Signal], initiative: st
         if s.cost:
             p.cost[s.cost.currency] = round(p.cost.get(s.cost.currency, 0) + s.cost.amount, 4)
             total[s.cost.currency] += s.cost.amount
+        elif s.type == "cost.incurred":
+            # Spend the domain measured but did not price: visible, never guessed.
+            unpriced["count"] += 1
+            unpriced["seconds"] += float(s.data.get("seconds") or 0)
         gate = _gate_key(s)
         if s.type == "gate.opened" and gate:
             gates[gate] = s
@@ -102,6 +108,7 @@ def initiative_view(org: Organization, signals: Iterable[Signal], initiative: st
         decisions=[s for s in mine if s.type in ("decision.recorded", "gate.decided")],
         open_gates=sorted(gates.values(), key=lambda s: s.occurred_at),
         cost={k: round(v, 4) for k, v in total.items()},
+        unpriced={"count": unpriced["count"], "seconds": round(unpriced["seconds"], 3)},
         signal_count=len(mine),
     )
 

@@ -252,10 +252,10 @@ KDP Studio records no cost today. Its signals carry `cost: null`.
 | `project.yaml` id | `work_unit_ref` |
 | `history.jsonl` per scene (append-only, ADR 0021) | `decision.recorded`, `gate.opened`, `gate.decided` |
 | `versions/` + `VERSIONS.md` records | `version.recorded` |
-| `spend.json` ledger entries | `cost.incurred` |
+| `<take>.job.json` provider job records, priced by the production's `generation_rates` | `cost.incurred` |
 | `workflow.started` / `workflow.done` events | `work.started`, `outcome.delivered` (candidate) |
 
-The spend ledger is machine-wide, not per production. The adapter attributes each entry to a production through Cine Toaster's job database (`jobs.sqlite`, `project_id`). This is the one place the adapter reads Cine Toaster's runtime internals rather than the production's own records.
+Cost comes from the production's own job records, not from Cine Toaster's machine-wide spend ledger. Reconciling the ledger, the production's records and the provider's billing is Cine Toaster's FinOps concern (its `docs/finops.md`: reconcile, do not duplicate). Bionic Company consumes the production's record. A job without a declared rate becomes a signal with its billed seconds and no amount. The twin shows it as unpriced spend instead of guessing a price.
 
 Records imported from before Cine Toaster carry timestamps without a time zone. The adapter assumes the machine's local zone and marks the signal with `timestamp_assumed_local`.
 

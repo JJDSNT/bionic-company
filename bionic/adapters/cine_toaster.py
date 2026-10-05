@@ -6,12 +6,15 @@ Read-only. Sources:
   never truncated (Cine Toaster ADR 0021);
 - each scene's ``state.json`` ``gates``: when a gate was opened, which the
   history does not record;
-- the machine's spend ledger (``spend.json``) joined to the job database
-  (``jobs.sqlite``) to know which production each paid job belongs to. Both
-  live in Cine Toaster's state directory, not in the production, so this part
-  reads a runtime record rather than the production's own: it is the one place
-  this adapter depends on Cine Toaster's internals.
+- the provider job records a production keeps beside its takes
+  (``<take>.job.json``): what each generation was billed in seconds. They
+  are the production's own cost records, whoever ran the job. The price per
+  hour is the production's declared ``generation_rates``; without one the
+  signal carries the seconds and no amount, rather than guessing a price.
 
+Cine Toaster's machine-wide spend ledger and job database are not read: they
+are runtime state, and reconciling them with the provider's billing is Cine
+Toaster's own FinOps concern (``docs/finops.md``: reconcile, do not duplicate).
 The ``events.jsonl`` cache is ignored: it is disposable by design (ADR 0006).
 """
 
@@ -19,10 +22,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
-import sqlite3
 from collections.abc import Iterator
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -63,22 +64,14 @@ def production_id(root: Path) -> str:
     return str(identity)
 
 
-def state_root() -> Path:
-    """Where Cine Toaster keeps machine-wide runtime state; the same rule it uses."""
-
-    configured = os.environ.get("XDG_STATE_HOME")
-    base = Path(configured).expanduser() if configured else Path.home() / ".local" / "state"
-    return base / "cine-toaster"
-
-
 def signals(root: Path) -> Iterator[Signal]:
     production = production_id(root)
-    scenes = root / str(((yaml.safe_load((root / "project.yaml").read_text("utf-8")) or {}).get("paths") or {})
-                        .get("scenes", "scenes"))
+    project = yaml.safe_load((root / "project.yaml").read_text("utf-8")) or {}
+    scenes = root / str((project.get("paths") or {}).get("scenes", "scenes"))
     for scene in sorted(p for p in scenes.iterdir() if p.is_dir()) if scenes.is_dir() else []:
         yield from _from_history(scene, production)
         yield from _from_gates(scene, production)
-    yield from _from_spend(production)
+    yield from _from_job_records(root, production, project.get("generation_rates") or {})
 
 
 def _scene_id(scene: Path) -> str:
@@ -146,28 +139,39 @@ def _from_gates(scene: Path, production: str) -> Iterator[Signal]:
         )
 
 
-def _from_spend(production: str) -> Iterator[Signal]:
-    ledger, jobs = state_root() / "spend.json", state_root() / "jobs.sqlite"
-    if not ledger.is_file() or not jobs.is_file():
-        return
-    with sqlite3.connect(f"file:{jobs}?mode=ro", uri=True) as connection:
-        owner = dict(connection.execute("SELECT id, project_id FROM jobs"))
-    for entry in json.loads(ledger.read_text("utf-8")).get("entries") or []:
-        if owner.get(entry.get("job")) != production:
+def _from_job_records(root: Path, production: str, rates: dict[str, Any]) -> Iterator[Signal]:
+    seen: set[str] = set()
+    # Archived takes included: they were paid for. A copy of a record (same job id) counts once.
+    for path in sorted(root.rglob("*.job.json")):
+        try:
+            record = json.loads(path.read_text("utf-8"))
+        except (OSError, ValueError):
             continue
-        identity = entry.get("remote") or entry.get("job")
+        job, endpoint = record.get("id"), record.get("endpoint")
+        if not job or not endpoint or job in seen:
+            continue
+        seen.add(job)
+        seconds = (float(record.get("delayTime") or 0) + float(record.get("executionTime") or 0)) / 1000
+        what = path.relative_to(root).as_posix().removesuffix(".job.json")
+        rate = rates.get(endpoint)
+        cost = Cost(amount=round(seconds * float(rate) / 3600, 4), currency="USD", kind="compute") \
+            if rate is not None else None
+        finished = record.get("finished_at")
+        when = finished or datetime.fromtimestamp(path.stat().st_mtime, UTC).isoformat(timespec="seconds")
+        priced = f"US$ {cost.amount:.4f}" if cost else "no declared rate"
         yield Signal(
-            id=f"{DOMAIN}:{production}:cost:{identity}",
+            id=f"{DOMAIN}:{production}:job:{job}",
             type="cost.incurred",
-            occurred_at=_when(str(entry["at"]))[0],
+            occurred_at=_when(when)[0],
             domain_id=DOMAIN,
             work_unit_ref=production,
-            actor=Actor(id=f"{DOMAIN}:runtime", kind="system"),
+            actor=Actor(id=f"{DOMAIN}:provider", kind="system"),
             capability=CAPABILITY,
-            summary=f"{entry.get('what', 'Remote job')}: US$ {float(entry.get('usd') or 0):.4f}",
-            data={k: v for k, v in entry.items() if k not in ("at", "usd")},
-            cost=Cost(amount=float(entry.get("usd") or 0), currency="USD", kind="compute"),
-            source={"kind": "spend.json", "ref": str(identity)},
+            summary=f"{what}: {seconds:.1f} s billed ({priced})",
+            data={"remote": job, "endpoint": endpoint, "seconds": round(seconds, 3), "status": record.get("status", ""),
+                  "rate_usd_per_hour": rate, "at_source": "recorded" if finished else "file_time"},
+            cost=cost,
+            source={"kind": "job.json", "ref": f"{what}.job.json"},
         )
 
 

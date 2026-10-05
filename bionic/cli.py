@@ -79,7 +79,10 @@ def initiative(org: organization.Organization, args: argparse.Namespace) -> int:
     if not view.open_gates:
         print("  none")
 
-    print("\nCost: " + (", ".join(f"{v:.2f} {k}" for k, v in view.cost.items()) or "none recorded"))
+    print("\nCost: " + (", ".join(f"{v:.2f} {k}" for k, v in view.cost.items()) or "none priced"))
+    if view.unpriced["count"]:
+        print(f"  plus {view.unpriced['count']} billed jobs the domain did not price"
+              f" ({view.unpriced['seconds'] / 3600:.2f} h)")
     return 0
 
 

@@ -142,9 +142,7 @@ def test_cli_end_to_end(tmp_path, capsys):
     assert "6 signals, " in out and "GAP — no provider" in out and "chapter-2" in out
 
 
-def make_production(root: Path, state_home: Path) -> Path:
-    import sqlite3
-
+def make_production(root: Path) -> Path:
     scene = root / "scenes" / "010-opening"
     scene.mkdir(parents=True)
     (root / "project.yaml").write_text("schema_version: 1\nid: film\npaths: {scenes: scenes}\n", "utf-8")
@@ -161,39 +159,40 @@ def make_production(root: Path, state_home: Path) -> Path:
                    "requested_at": "2026-09-21T10:00:00+00:00", "requested_by": {"id": "workflow", "kind": "system"}},
     }}), "utf-8")
 
-    runtime = state_home / "cine-toaster"
-    runtime.mkdir(parents=True)
-    with sqlite3.connect(runtime / "jobs.sqlite") as db:
-        db.execute("CREATE TABLE jobs (id TEXT PRIMARY KEY, project_id TEXT)")
-        db.executemany("INSERT INTO jobs VALUES (?, ?)", [("job_a", "film"), ("job_b", "another-film")])
-    (runtime / "spend.json").write_text(json.dumps({"limit_usd": 5, "entries": [
-        {"at": "2026-09-22T10:00:00+00:00", "usd": 0.5, "what": "Block 1", "job": "job_a", "remote": "r1"},
-        {"at": "2026-09-22T11:00:00+00:00", "usd": 9.0, "what": "Other", "job": "job_b", "remote": "r2"},
-    ]}), "utf-8")
+    work = scene / "work"
+    work.mkdir()
+    record = {"id": "job-1", "endpoint": "ep", "status": "COMPLETED", "delayTime": 1000, "executionTime": 359000,
+              "finished_at": "2026-09-22T10:00:00+00:00"}
+    (work / "c01.mp4.job.json").write_text(json.dumps(record), "utf-8")
+    (root / "archive").mkdir()
+    (root / "archive" / "c01-copy.mp4.job.json").write_text(json.dumps(record), "utf-8")  # same job: once
+    (work / "c02.mp4.job.json").write_text(json.dumps({**record, "id": "job-2", "endpoint": "unpriced"}), "utf-8")
+    with (root / "project.yaml").open("a", encoding="utf-8") as handle:
+        handle.write("generation_rates: {ep: 2.0}\n")
     return root
 
 
-def test_cine_production_becomes_signals(tmp_path, monkeypatch):
+def test_cine_production_becomes_signals(tmp_path):
     from bionic.adapters import cine_toaster
 
-    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
-    production = make_production(tmp_path / "film", tmp_path / "state")
+    production = make_production(tmp_path / "film")
     signals = {s.type: s for s in cine_toaster.signals(production)}
     found = [s.type for s in cine_toaster.signals(production)]
 
-    assert sorted(found) == sorted(["version.recorded", "gate.decided", "gate.opened", "gate.opened", "cost.incurred"])
+    assert sorted(found) == sorted(["version.recorded", "gate.decided", "gate.opened", "gate.opened",
+                                    "cost.incurred", "cost.incurred"])
     assert signals["version.recorded"].data["timestamp_assumed_local"] is True
     assert signals["version.recorded"].data["scene"] == "010"
-    # Only the cost of this production's jobs, from the machine-wide ledger.
-    assert signals["cost.incurred"].cost.amount == 0.5
+    costs = {s.data["remote"]: s for s in cine_toaster.signals(production) if s.type == "cost.incurred"}
+    assert costs["job-1"].cost.amount == 0.2  # 360 s at US$ 2.00/h, declared by the production
+    assert costs["job-2"].cost is None and costs["job-2"].data["seconds"] == 360.0
     assert all(s.work_unit_ref == "film" for s in signals.values())
 
 
-def test_cine_open_gates_and_cost_reach_the_initiative(tmp_path, monkeypatch):
+def test_cine_open_gates_and_cost_reach_the_initiative(tmp_path):
     from bionic.adapters import cine_toaster
 
-    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
-    production = make_production(tmp_path / "film", tmp_path / "state")
+    production = make_production(tmp_path / "film")
     org = replace(make_org(tmp_path / "org", tmp_path / "book"),
                   domains={"cine-toaster": organization.Domain("cine-toaster", "Cine Toaster")},
                   bindings=[organization.Binding("the-book", "cine-toaster", "film")])
@@ -201,5 +200,6 @@ def test_cine_open_gates_and_cost_reach_the_initiative(tmp_path, monkeypatch):
 
     view = twin.initiative_view(org, signals, "the-book")
     assert [g.data["gate"] for g in view.open_gates] == ["gate_2"]
-    assert view.cost == {"USD": 0.5}
+    assert view.cost == {"USD": 0.2}
+    assert view.unpriced == {"count": 1, "seconds": 360.0}
 
