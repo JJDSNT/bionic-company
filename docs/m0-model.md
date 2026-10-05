@@ -255,6 +255,10 @@ KDP Studio records no cost today. Its signals carry `cost: null`.
 | `spend.json` ledger entries | `cost.incurred` |
 | `workflow.started` / `workflow.done` events | `work.started`, `outcome.delivered` (candidate) |
 
+The spend ledger is machine-wide, not per production. The adapter attributes each entry to a production through Cine Toaster's job database (`jobs.sqlite`, `project_id`). This is the one place the adapter reads Cine Toaster's runtime internals rather than the production's own records.
+
+Records imported from before Cine Toaster carry timestamps without a time zone. The adapter assumes the machine's local zone and marks the signal with `timestamp_assumed_local`.
+
 Prefer the durable `history.jsonl` over `events.jsonl`. The latter is a disposable cache by design (ADR 0006).
 
 The MCP server (`production_status`, `read_budget`) is a valid alternative transport for snapshots, but snapshots cannot reconstruct history. Durable records are the primary source.

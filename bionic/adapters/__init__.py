@@ -4,10 +4,11 @@ from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from ..contract import Signal
-from . import kdp_studio
+from . import cine_toaster, kdp_studio
 
 ADAPTERS: dict[str, Callable[[Path], Iterator[Signal]]] = {
     kdp_studio.DOMAIN: kdp_studio.signals,
+    cine_toaster.DOMAIN: cine_toaster.signals,
 }
 
-MANIFESTS = {kdp_studio.DOMAIN: kdp_studio.MANIFEST}
+MANIFESTS = {kdp_studio.DOMAIN: kdp_studio.MANIFEST, cine_toaster.DOMAIN: cine_toaster.MANIFEST}

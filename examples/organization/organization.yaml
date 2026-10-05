@@ -36,7 +36,9 @@ initiatives:
 
 bindings:
   - {initiative: a-era-dos-agentes, domain: kdp-studio, work_unit_ref: a-era-dos-agentes}
+  - {initiative: singular, domain: cine-toaster, work_unit_ref: singular}
 
 # Where adapters read each domain's work units. Local to this machine.
 sources:
   - {domain: kdp-studio, path: ~/books/a-era-dos-agentes}
+  - {domain: cine-toaster, path: ~/films/singular}

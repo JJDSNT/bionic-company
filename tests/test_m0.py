@@ -1,5 +1,6 @@
 import json
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -139,3 +140,66 @@ def test_cli_end_to_end(tmp_path, capsys):
     assert main(["--org", str(org.root), "overview"]) == 0
     out = capsys.readouterr().out
     assert "6 signals, " in out and "GAP — no provider" in out and "chapter-2" in out
+
+
+def make_production(root: Path, state_home: Path) -> Path:
+    import sqlite3
+
+    scene = root / "scenes" / "010-opening"
+    scene.mkdir(parents=True)
+    (root / "project.yaml").write_text("schema_version: 1\nid: film\npaths: {scenes: scenes}\n", "utf-8")
+    (scene / "history.jsonl").write_text("\n".join(json.dumps(e) for e in [
+        {"kind": "assembly.imported", "assembly_id": "v1", "command_id": "import-v1", "decided_at": "2026-09-18T08:24:00",
+         "actor": {"id": "migration", "kind": "system"}, "rationale": "Imported."},
+        {"kind": "gate.decided", "gate": "gate_1", "outcome": "approved", "command_id": "c2",
+         "decided_at": "2026-09-20T10:00:00+00:00", "actor": HUMAN, "rationale": ""},
+    ]) + "\n", "utf-8")
+    (scene / "state.json").write_text(json.dumps({"scene_id": "010", "gates": {
+        "gate_1": {"kind": "approve_picture", "subject": "c01", "state": "approved",
+                   "requested_at": "2026-09-19T10:00:00+00:00", "requested_by": {"id": "workflow", "kind": "system"}},
+        "gate_2": {"kind": "approve_picture", "subject": "c02", "state": "waiting",
+                   "requested_at": "2026-09-21T10:00:00+00:00", "requested_by": {"id": "workflow", "kind": "system"}},
+    }}), "utf-8")
+
+    runtime = state_home / "cine-toaster"
+    runtime.mkdir(parents=True)
+    with sqlite3.connect(runtime / "jobs.sqlite") as db:
+        db.execute("CREATE TABLE jobs (id TEXT PRIMARY KEY, project_id TEXT)")
+        db.executemany("INSERT INTO jobs VALUES (?, ?)", [("job_a", "film"), ("job_b", "another-film")])
+    (runtime / "spend.json").write_text(json.dumps({"limit_usd": 5, "entries": [
+        {"at": "2026-09-22T10:00:00+00:00", "usd": 0.5, "what": "Block 1", "job": "job_a", "remote": "r1"},
+        {"at": "2026-09-22T11:00:00+00:00", "usd": 9.0, "what": "Other", "job": "job_b", "remote": "r2"},
+    ]}), "utf-8")
+    return root
+
+
+def test_cine_production_becomes_signals(tmp_path, monkeypatch):
+    from bionic.adapters import cine_toaster
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    production = make_production(tmp_path / "film", tmp_path / "state")
+    signals = {s.type: s for s in cine_toaster.signals(production)}
+    found = [s.type for s in cine_toaster.signals(production)]
+
+    assert sorted(found) == sorted(["version.recorded", "gate.decided", "gate.opened", "gate.opened", "cost.incurred"])
+    assert signals["version.recorded"].data["timestamp_assumed_local"] is True
+    assert signals["version.recorded"].data["scene"] == "010"
+    # Only the cost of this production's jobs, from the machine-wide ledger.
+    assert signals["cost.incurred"].cost.amount == 0.5
+    assert all(s.work_unit_ref == "film" for s in signals.values())
+
+
+def test_cine_open_gates_and_cost_reach_the_initiative(tmp_path, monkeypatch):
+    from bionic.adapters import cine_toaster
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    production = make_production(tmp_path / "film", tmp_path / "state")
+    org = replace(make_org(tmp_path / "org", tmp_path / "book"),
+                  domains={"cine-toaster": organization.Domain("cine-toaster", "Cine Toaster")},
+                  bindings=[organization.Binding("the-book", "cine-toaster", "film")])
+    signals = list(cine_toaster.signals(production))
+
+    view = twin.initiative_view(org, signals, "the-book")
+    assert [g.data["gate"] for g in view.open_gates] == ["gate_2"]
+    assert view.cost == {"USD": 0.5}
+
