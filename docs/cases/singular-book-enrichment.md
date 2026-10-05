@@ -89,7 +89,11 @@ No capability was declared, and the mechanism names only kinds. **Caveat:** the 
 
 The resolution describes the need as a transformation *between* a provider and its input ("turns film into book or text"), and does not fold it into KDP Studio or Cine Toaster. It does not yet propose a capability with an identity, a place or an owner. That belongs to M2.
 
-### Stages 3–5: not started
+### Stages 3–5: deferred (2026-10-05)
+
+The author chose not to build the capability yet: the screenplay is not finished, so the input the enrichment draws on is not ready. The capability is to be built when the moment is right, not ahead of it.
+
+This adds one observation for the model: **an intent's inputs have readiness.** The intent draws on the film, but enrichment only makes sense once the screenplay is final. The model has no way to say "this input is not ready yet", so the intent shows as an actionable gap when it is really waiting on its input. To revisit when the case resumes.
 
 ## Related
 
