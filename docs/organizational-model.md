@@ -14,7 +14,9 @@ A useful working definition is:
 
 The current architectural hypothesis is:
 
-> **Bionic Company = Agentic BizOps + Organizational Twin.**
+> **Bionic Company = Agentic BizOps + Organizational Twin + Organizational Adaptation.**
+
+The third element is essential: an agentic organization should not only coordinate work and represent its state. It should also be able to adapt its own capabilities and sustain the technical systems that make the organization possible.
 
 ## Agentic BizOps
 
@@ -66,6 +68,104 @@ It may represent:
 - historical decisions and outcomes.
 
 Agents belonging to other domains may appear in the twin for visibility, topology, status and organizational understanding. Their presence in the twin does **not** imply that Bionic Company owns or directly orchestrates their internal work.
+
+## Organizational Adaptation and Self-Evolution
+
+A bionic organization should be able to evolve its own capacity rather than depend exclusively on a permanently predefined set of agents and roles.
+
+This does **not** mean uncontrolled autonomous self-modification. It means that organizational needs can reveal capability gaps and that the organization can respond through governed adaptation.
+
+A useful conceptual cycle is:
+
+```text
+Observe
+   ↓
+Understand
+   ↓
+Identify Need / Capability Gap
+   ↓
+Decide
+   ↓
+Adapt
+   ↓
+Operate
+   ↓
+Measure
+   └────────────↺
+```
+
+The current model distinguishes two forms of adaptation.
+
+### Agent Workforce and Meta-Agent
+
+The **Agent Workforce** represents the agentic capacity available to the organization.
+
+A **Meta-Agent** may eventually help the organization:
+- identify missing agentic capabilities;
+- propose a new agent or role;
+- create and configure agents when appropriate;
+- register them in the Organizational Twin;
+- evaluate their usefulness and performance;
+- adapt, replace or retire agents whose purpose has changed.
+
+This is primarily an organizational capability. A Bionic Company meta-agent should not automatically reach inside an autonomous domain and rewrite its internal workforce.
+
+When a capability gap is detected inside a domain, the organizational layer may express the need or desired outcome. The domain remains responsible for deciding how its own agentic architecture should adapt.
+
+Human approval, policy, security and cost controls may govern agent creation, modification and retirement.
+
+### Self-Maintenance: Development, DevOps and SRE
+
+Bionic Company is itself a software system and therefore has technical needs of its own.
+
+Development, DevOps and Site Reliability Engineering (SRE) are potential self-maintenance capabilities responsible for the evolution and reliability of the Bionic Company platform itself, including concerns such as:
+- code evolution;
+- testing and releases;
+- infrastructure and deployment;
+- observability;
+- reliability and availability;
+- incident response;
+- technical debt;
+- platform performance and cost.
+
+These roles are different from the Meta-Agent:
+
+- the **Meta-Agent** evolves the organization's agentic workforce and capabilities;
+- **Development / DevOps / SRE** sustain and evolve the technical platform that enables the organization.
+
+The exact implementation of these roles is deliberately not prescribed yet.
+
+### Recursive Autonomy
+
+The same pattern may exist independently inside operating domains.
+
+For example, Cine Toaster may maintain its own development, DevOps, SRE or meta-agent capabilities because those agents require deep knowledge of the audiovisual platform. KDP Studio and Pulse may evolve equivalent mechanisms when their real needs justify them.
+
+Conceptually:
+
+```text
+Bionic Company
+├── organizational adaptation
+│   ├── Meta-Agent
+│   └── Dev / DevOps / SRE
+│
+├── KDP Studio
+│   └── domain-owned adaptation
+│
+├── Cine Toaster
+│   └── domain-owned adaptation
+│
+└── Pulse
+    └── domain-owned adaptation
+```
+
+This creates **global coherence with local autonomy**.
+
+Bionic Company may observe reliability, cost or capability problems through the Organizational Twin and establish an organizational outcome or constraint. The affected domain decides how to satisfy it internally.
+
+A useful distinction is:
+
+> **Self-maintaining domains; self-evolving organization.**
 
 ## Current Operating Domains
 
@@ -194,7 +294,7 @@ Organizational Signals
         ↓
 Organizational Twin
         ↓
-Decision / Adaptation
+Decision / Adaptation / Self-Evolution
 ```
 
 LangGraph, AG-UI, A2A, MCP, simulation and agent technologies may still be valuable. Their role should be reassessed against this organizational model rather than treated as the product definition.
@@ -213,6 +313,9 @@ This draft intentionally leaves several questions unresolved:
 8. How should organizational simulation and scenario planning use the twin?
 9. How should human governance and approval be represented?
 10. Which concepts from the original AgentOS prototype should be retained, adapted or retired?
+11. What governance should apply to agent creation, modification and retirement?
+12. How should organizational capability gaps be represented and detected?
+13. Which self-maintenance capabilities should be permanent versus created on demand?
 
 ## Near-Term Architectural Direction
 
@@ -223,4 +326,5 @@ Before expanding implementation, the repository should:
 3. Preserve the existing prototype while marking its planner/executor model as exploratory.
 4. Define the smallest domain-facing contracts for intent and results.
 5. Prototype the Organizational Twin around the real ecosystem: KDP Studio, Cine Toaster and Pulse.
-6. Let real cross-domain use cases drive subsequent abstractions.
+6. Represent organizational adaptation and agent workforce without prematurely fixing agent roles.
+7. Let real cross-domain use cases drive subsequent abstractions.
