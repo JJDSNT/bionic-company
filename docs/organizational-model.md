@@ -57,7 +57,61 @@ Strategic / Tactical Decision
 
 The Organizational Twin is the living representation of the company used for observation, reasoning and simulation.
 
-It may represent:
+It has two primary properties:
+
+### Observe and Map
+
+The twin should represent the organization as it actually behaves, including its current state, flows, processes and temporary relationships.
+
+It is not merely an organizational chart. Initiatives do not permanently belong to domains. As an initiative evolves, different capabilities may be required and different domains or agents may participate for a period of time.
+
+The twin should therefore be able to observe and reconstruct paths such as:
+
+```text
+Initiative
+   ↓
+current direction
+   ↓
+organizational flow / process
+   ↓
+capability used
+   ↓
+domain / workforce participation
+   ↓
+result
+   ↓
+new initiative state
+```
+
+The relationships visible in the twin describe what is happening now or what happened historically; they should not unnecessarily hard-code permanent ownership.
+
+### Simulate
+
+The twin should also support scenario exploration: **what may happen if the organization follows a particular direction?**
+
+A simulation may compare alternative organizational paths using the information available about current state, historical flows, capabilities, resources, costs, risks, constraints and outcomes.
+
+```text
+Current Organizational State
+          ↓
+     Scenario A ──→ estimated consequences
+     Scenario B ──→ estimated consequences
+     Scenario C ──→ estimated consequences
+          ↓
+        Decision
+          ↓
+    Real execution
+          ↓
+        Signals
+          ↓
+Twin update / future calibration
+```
+
+Simulation is not treated as certainty or prediction of the future. It is a decision-support capability based on explicit assumptions and available evidence.
+
+Over time, real execution can improve the twin's future simulations by providing observed durations, costs, resource consumption, bottlenecks, risks and outcomes.
+
+The twin may represent:
 - business domains and business capabilities;
 - active initiatives and their relationships;
 - resources;
@@ -112,7 +166,11 @@ This is primarily an organizational capability. A Bionic Company meta-agent shou
 
 When a capability gap is detected inside a domain, the organizational layer may express the need or desired outcome. The domain remains responsible for deciding how its own agentic architecture should adapt.
 
-Human approval, policy, security and cost controls may govern agent creation, modification and retirement.
+Agent creation, modification, allocation and retirement are expected to be autonomous workforce-management decisions by default.
+
+Human governance should primarily operate at the level of **direction and constraints**: strategy, objectives, priorities, budget, risk tolerance, policies, legal/security boundaries and other organizational limits. Within that authority envelope, the organization may decide how many agents it needs, which roles to create, how to compose teams, how to distribute work and when to reassign or retire capacity.
+
+Specific human gates may still exist when a policy or constraint explicitly requires them, but they are not assumed for routine workforce reconfiguration.
 
 ### Self-Maintenance: Development, DevOps and SRE
 
@@ -167,6 +225,46 @@ A useful distinction is:
 
 > **Self-maintaining domains; self-evolving organization.**
 
+## Initiatives and Dynamic Organizational Flow
+
+An **Initiative** is intentionally independent from any domain.
+
+It represents something the organization is pursuing. It should not be structurally assigned to KDP Studio, Cine Toaster, Pulse or any future domain, nor should it need a permanent predefined list of domain needs.
+
+Needs emerge dynamically from the initiative's current state, direction and context.
+
+For example, an initiative such as **Singular** may at one moment require audiovisual production, later feed creative learning back into editorial work, and later require market-facing capabilities. Those relationships arise through the organizational flow rather than being encoded as ownership.
+
+Similarly, **A Era dos Agentes** can move through editorial, audiovisual or market-related activity as its direction evolves without changing the identity of the initiative.
+
+Conceptually:
+
+```text
+Initiative
+    +
+Current State / Context
+    +
+Current Direction
+        ↓
+      BizOps
+        ↓
+Capability required now
+        ↓
+Capability resolution
+        ↓
+Domain / Agent / Resource
+        ↓
+Result + Signals
+        ↓
+Updated Initiative State
+```
+
+This keeps initiatives decoupled from the current organizational structure. Domains may change, capabilities may move, external providers may eventually participate, and the initiative does not need to be remodeled.
+
+A useful principle is:
+
+> **Initiatives do not belong to domains. Domains provide capabilities to initiatives as their needs emerge through the organizational flow.**
+
 ## Current Operating Domains
 
 The first organizational model uses three autonomous operating domains:
@@ -190,7 +288,7 @@ These applications remain independently useful products. Bionic Company is not i
 Bionic Company exchanges **organizational intent and organizational results** with domains.
 
 Typical direction from Bionic Company to a domain may include:
-- objective or initiative;
+- a request derived from an initiative or organizational objective;
 - desired outcome;
 - priority;
 - deadline;
@@ -311,9 +409,9 @@ This draft intentionally leaves several questions unresolved:
 6. How should cross-domain initiatives be coordinated without operational micromanagement?
 7. Which interoperability mechanisms should be normative versus optional?
 8. How should organizational simulation and scenario planning use the twin?
-9. How should human governance and approval be represented?
+9. How should human strategic governance and constraint-setting be represented?
 10. Which concepts from the original AgentOS prototype should be retained, adapted or retired?
-11. What governance should apply to agent creation, modification and retirement?
+11. How should the authority envelope for autonomous workforce adaptation be represented?
 12. How should organizational capability gaps be represented and detected?
 13. Which self-maintenance capabilities should be permanent versus created on demand?
 
@@ -325,6 +423,7 @@ Before expanding implementation, the repository should:
 2. Reframe the README around Bionic Company rather than a generic AgentOS.
 3. Preserve the existing prototype while marking its planner/executor model as exploratory.
 4. Define the smallest domain-facing contracts for intent and results.
-5. Prototype the Organizational Twin around the real ecosystem: KDP Studio, Cine Toaster and Pulse.
+5. Prototype the Organizational Twin around real initiatives such as Singular and A Era dos Agentes, observing dynamic relationships with KDP Studio, Cine Toaster and Pulse.
 6. Represent organizational adaptation and agent workforce without prematurely fixing agent roles.
-7. Let real cross-domain use cases drive subsequent abstractions.
+7. Start with observation/mapping of real organizational flows; introduce simulation incrementally.
+8. Let real cross-domain use cases drive subsequent abstractions.
