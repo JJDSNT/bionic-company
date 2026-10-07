@@ -263,6 +263,7 @@ No framework or protocol defines the project. Technology choices should follow t
 
 | Document | What it holds |
 |---|---|
+| [docs/architecture/agentic-reference-architecture.md](docs/architecture/agentic-reference-architecture.md) | **BC-ARA** — technology-agnostic reference model for agentic control, runtime, decisions, evaluation, learning and governance |
 | [docs/organizational-model.md](docs/organizational-model.md) | The working theory: boundaries, principles, open questions |
 | [docs/m0-model.md](docs/m0-model.md) | M0 — Observe: entities, the contract, the twin, cross-domain validation |
 | [docs/m1-model.md](docs/m1-model.md) | M1 — Direct: intents, resolution, handoff, fulfilment |
