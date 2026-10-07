@@ -136,6 +136,12 @@ confidence / risk / policy
 
 BC-ARA defines the capability rather than prescribing a specific implementation.
 
+#### Technology candidates and references
+
+Decision Intelligence may be implemented with deterministic rules, policy engines, classifiers, small or large language models, dedicated decision models, learned routing policies, human gates, or hybrids.
+
+**OpenJev** is currently tracked as a concrete research reference for dedicated decision models. It must not be confused with the architecture itself: BC-ARA remains implementation-agnostic. See [OpenJev as a Decision Intelligence Reference](../research/openjev-decision-intelligence.md).
+
 ### Execution
 
 Workers and specialists perform domain work through tools, APIs, MCP servers, local capabilities, other agents, or domain-specific infrastructure.
